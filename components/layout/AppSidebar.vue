@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { NavGroup, NavLink, NavSectionTitle } from '~/types/nav'
 import { navMenu, navMenuBottom } from '~/constants/menus'
+import { useAuthStore } from '~/stores/auth'
+
+const authStore = useAuthStore()
+const { sidebar } = useAppSettings()
 
 function resolveNavItemComponent(item: NavLink | NavGroup | NavSectionTitle): any {
   if ('children' in item)
@@ -9,39 +13,30 @@ function resolveNavItemComponent(item: NavLink | NavGroup | NavSectionTitle): an
   return resolveComponent('LayoutSidebarNavLink')
 }
 
-const teams: {
-  name: string
-  logo: string
-  plan: string
-}[] = [
+const teams = [
   {
-    name: 'Acme Inc',
+    name: 'SMARTI.ID',
     logo: 'i-lucide-gallery-vertical-end',
     plan: 'Enterprise',
   },
-  {
-    name: 'Acme Corp.',
-    logo: 'i-lucide-audio-waveform',
-    plan: 'Startup',
-  },
-  {
-    name: 'Evil Corp.',
-    logo: 'i-lucide-command',
-    plan: 'Free',
-  },
 ]
 
-const user: {
-  name: string
-  email: string
-  avatar: string
-} = {
-  name: 'Dian Pratama',
-  email: 'dianpratama2@gmail.com',
-  avatar: '/avatars/avatartion.png',
-}
+onMounted(async () => {
+  if (!authStore.token) return
+  if (!authStore.user) {
+    await authStore.fetchProfile()
+  }
+})
 
-const { sidebar } = useAppSettings()
+const user = computed(() => {
+  const u = authStore.user
+  return {
+    name: u?.name || 'Unknown',
+    email: u?.email || '',
+    avatar: u?.avatar || '/avatars/default.png',
+    npwp: u?.npwp || '',
+  }
+})
 </script>
 
 <template>
@@ -50,24 +45,38 @@ const { sidebar } = useAppSettings()
       <LayoutSidebarNavHeader :teams="teams" />
       <Search />
     </SidebarHeader>
+
     <SidebarContent>
       <SidebarGroup v-for="(nav, indexGroup) in navMenu" :key="indexGroup">
         <SidebarGroupLabel v-if="nav.heading">
           {{ nav.heading }}
         </SidebarGroupLabel>
-        <component :is="resolveNavItemComponent(item)" v-for="(item, index) in nav.items" :key="index" :item="item" />
+        <component
+          :is="resolveNavItemComponent(item)"
+          v-for="(item, index) in nav.items"
+          :key="index"
+          :item="item"
+        />
       </SidebarGroup>
+
       <SidebarGroup class="mt-auto">
-        <component :is="resolveNavItemComponent(item)" v-for="(item, index) in navMenuBottom" :key="index" :item="item" size="sm" />
+        <component
+          :is="resolveNavItemComponent(item)"
+          v-for="(item, index) in navMenuBottom"
+          :key="index"
+          :item="item"
+          size="sm"
+        />
       </SidebarGroup>
     </SidebarContent>
+
     <SidebarFooter>
       <LayoutSidebarNavFooter :user="user" />
     </SidebarFooter>
+
     <SidebarRail />
   </Sidebar>
 </template>
 
 <style scoped>
-
 </style>

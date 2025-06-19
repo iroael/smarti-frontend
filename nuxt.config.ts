@@ -1,7 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
-
+  runtimeConfig: {
+    public: {
+      apiBase: 'http://localhost:10003', // Ganti sesuai server kamu
+    },
+  },
   modules: [
     '@unocss/nuxt',
     'shadcn-nuxt',

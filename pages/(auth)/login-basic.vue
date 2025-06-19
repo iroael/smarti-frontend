@@ -11,7 +11,7 @@ definePageMeta({
         <div class="h-6 w-6 flex items-center justify-center rounded-md bg-primary text-primary-foreground">
           <Icon name="i-lucide-gallery-vertical-end" class="size-4" />
         </div>
-        Acme Inc.
+        SMARTI.ID
       </NuxtLink>
       <div class="flex flex-col gap-6">
         <Card>

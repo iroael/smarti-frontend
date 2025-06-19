@@ -1,0 +1,13 @@
+{
+  "data": [
+    {
+      "id": 3,
+      "name": "John Doe 1",
+      "email": "john@example.com",
+      "phone": "081234567890",
+      "npwp": "09.123.456.7-890.000",
+      "address": "Jl. Merdeka No. 123, Jakarta",
+      "createdAt": "2025-06-15T22:57:51.926Z"
+    }
+  ]
+}
