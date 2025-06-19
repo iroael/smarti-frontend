@@ -1,7 +1,8 @@
-import { productListSchema, productSchema, type Product } from '@/components/product/data/schema'
 import { useFetch } from '#app'
 import { useRuntimeConfig } from '#imports'
+import { productListSchema, productSchema, type Product } from '@/components/product/data/schema'
 import { ref } from 'vue'
+import { useAuthStore } from '~/stores/auth'
 
 const bundleProducts = ref<Product[]>([])
 const products = ref([])
@@ -9,13 +10,28 @@ const loading = ref(false)
 
 export function useProducts() {
   const config = useRuntimeConfig()
+  const authStore = useAuthStore()
+
+  // Helper function to get auth headers
+  const getAuthHeaders = () => {
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+    }
+
+    // Get token from auth store
+    if (authStore.token) {
+      headers.Authorization = `Bearer ${authStore.token}`
+    }
+
+    return headers
+  }
 
   const fetchProducts = async () => {
     loading.value = true
     try {
       const { data } = await useFetch(`${config.public.apiBase}/products`, {
         method: 'GET',
-        headers: authHeaders(),
+        headers: getAuthHeaders(),
       })
       products.value = data.value?.data ?? []
       console.log('Fetched products:', products.value)
@@ -28,7 +44,7 @@ export function useProducts() {
   const getProductById = async (id: number) => {
     const { data, error } = await useFetch(`${config.public.apiBase}/products/${id}`, {
       method: 'GET',
-      headers: authHeaders(),
+      headers: getAuthHeaders(),
     })
     if (error.value)
       throw error.value
@@ -39,7 +55,7 @@ export function useProducts() {
     const { data, error } = await useFetch(`${config.public.apiBase}/products`, {
       method: 'POST',
       headers: {
-        ...authHeaders(),
+        ...getAuthHeaders(),
         'Content-Type': 'application/json',
       },
       body: payload,
@@ -53,7 +69,7 @@ export function useProducts() {
     const { data, error } = await useFetch(`${config.public.apiBase}/products/${id}`, {
       method: 'PUT',
       headers: {
-        ...authHeaders(),
+        ...getAuthHeaders(),
         'Content-Type': 'application/json',
       },
       body: payload,
@@ -66,7 +82,7 @@ export function useProducts() {
   const deleteProduct = async (id: number) => {
     const { data, error } = await useFetch(`${config.public.apiBase}/products/${id}`, {
       method: 'DELETE',
-      headers: authHeaders(),
+      headers: getAuthHeaders(),
     })
     if (error.value)
       throw error.value
@@ -80,7 +96,7 @@ export function useProducts() {
     try {
       const { data } = await useFetch(`${config.public.apiBase}/products`, {
         method: 'GET',
-        headers: authHeaders(),
+        headers: getAuthHeaders(),
       })
       const all = data.value?.data ?? []
       nonBundleProducts.value = all.filter((p: any) => p.is_bundle === false)
@@ -99,7 +115,7 @@ export function useProducts() {
     try {
       const { data, error } = await useFetch(`${config.public.apiBase}/products`, {
         method: 'GET',
-        headers: authHeaders(),
+        headers: getAuthHeaders(),
       })
 
       if (error.value) throw error.value
@@ -130,13 +146,5 @@ export function useProducts() {
     fetchBundleProducts,
     bundleProducts,
     nonBundleProducts,
-  }
-}
-
-function authHeaders() {
-  return {
-    Authorization:
-      'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoiam9obkBleGFtcGxlLmNvbSIsImlhdCI6MTc1MDIxMTkxMywiZXhwIjoxNzUwMjk4MzEzfQ.AMoMtg_InX_rdWO2wnFixNdB1uGcSzoBxJGK82OBXig',
-    Accept: 'application/json',
   }
 }

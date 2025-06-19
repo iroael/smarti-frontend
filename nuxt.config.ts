@@ -4,6 +4,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: 'http://localhost:10003', // Ganti sesuai server kamu
+      midtransClientKey: 'SB-Mid-client-Q--Pt3_jAV6r0W8r', // Tambahkan ini kalau mau akses di runtime
     },
   },
   modules: [
@@ -19,6 +20,17 @@ export default defineNuxtConfig({
   css: [
     '@unocss/reset/tailwind.css',
   ],
+
+  app: {
+    head: {
+      script: [
+        {
+          src: 'https://app.sandbox.midtrans.com/snap/snap.js',
+          'data-client-key': 'SB-Mid-client-Q--Pt3_jAV6r0W8r',
+        },
+      ],
+    },
+  },
 
   colorMode: {
     classSuffix: '',

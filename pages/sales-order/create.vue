@@ -29,14 +29,41 @@ import { Separator } from '@/components/ui/separator'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useProducts } from '@/composables/useProducts'
 import { useSalesOrder } from '@/composables/useSalesOrder'
-import { computed, ref, watch } from 'vue'
+import { useCustomers } from '@/composables/useCustomers'
+import { computed, ref, watch, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
 
 const { createSalesOrder } = useSalesOrder()
+const { getCurrentCustomer } = useCustomers()
 const { fetchBundleProducts, bundleProducts } = useProducts()
 
-// Fetch bundle products on component mount
-fetchBundleProducts()
+const currentCustomer = ref(null)
+const customerId = ref<number | null>(null)
+
+const fetchCurrentCustomer = async () => {
+  try {
+    const response = await getCurrentCustomer()
+    currentCustomer.value = response
+    
+    // Handle different possible response structures
+    if (response?.data) {
+      // If response has data property
+      customerName.value = response.data.name || ''
+      customerId.value = response.data.id || null
+      console.log('Current customer from response.data:', response.data.name, response.data.id)
+    } else if (response?.name) {
+      // If response is direct customer object
+      customerName.value = response.name || ''
+      customerId.value = response.id || null
+      console.log('Current customer direct:', response.name, response.id)
+    } else {
+      console.log('Unexpected response structure:', response)
+    }
+  } catch (err) {
+    console.error('Failed to fetch current customer:', err)
+    toast.error('Gagal mengambil data customer')
+  }
+}
 
 // PPN Configuration
 const PPN_RATE = 0.11 // 11%
@@ -86,7 +113,7 @@ const customerAddresses = ref([
     province: 'Jawa Barat',
     postalCode: '40111',
     isDefault: false
-  }
+  },
 ])
 
 // Form state
@@ -187,10 +214,9 @@ const handleAddressChange = (value: any) => {
     console.error('Unexpected value type:', typeof value, value)
     return
   }
-  
   console.log('Converted to number:', numValue)
   selectedAddressId.value = numValue
-  
+
   // Force reactivity update
   setTimeout(() => {
     console.log('After update - selectedAddressId:', selectedAddressId.value)
@@ -224,12 +250,13 @@ const totalQuantity = computed(() =>
 const loading = ref(false)
 
 const resetForm = () => {
-  customerName.value = ''
+  // Don't reset customer info, just reset the form fields
   selectedAddressId.value = 1
   notes.value = ''
   includePPN.value = true
   selectedItems.value = []
   errors.value = {}
+  // Keep customerName and customerId from current customer
 }
 
 const submit = async () => {
@@ -240,7 +267,8 @@ const submit = async () => {
 
   loading.value = true
   try {
-    await createSalesOrder({
+    const response = await createSalesOrder({
+      customerId: customerId.value, // Include customer ID
       customerName: customerName.value,
       selectedAddressId: selectedAddressId.value,
       deliveryAddress: getSelectedAddress(),
@@ -252,9 +280,25 @@ const submit = async () => {
       items: selectedItems.value
     })
 
-    toast.success('Sales Order berhasil dibuat', {
-      description: `${selectedItemsCount.value} bundle produk dengan total ${totalQuantity.value} item`
-    })
+    toast.success('Sales Order berhasil dibuat')
+
+    // Kalau backend return snapToken
+    if (response?.snapToken) {
+      window.snap.pay(response.snapToken, {
+        onSuccess: function(result) {
+          console.log('Pembayaran sukses:', result)
+          toast.success('Pembayaran berhasil!')
+        },
+        onPending: function(result) {
+          console.log('Pembayaran pending:', result)
+          toast('Pembayaran masih pending.')
+        },
+        onError: function(result) {
+          console.error('Pembayaran error:', result)
+          toast.error('Pembayaran gagal.')
+        },
+      })
+    }
 
     resetForm()
     fetchBundleProducts() // Refresh data setelah submit
@@ -279,6 +323,12 @@ watch(selectedAddressId, (newVal, oldVal) => {
   console.log('selectedAddressId changed from', oldVal, 'to', newVal)
   console.log('Selected address:', getSelectedAddress())
 }, { immediate: true })
+
+// Initialize data on component mount
+onMounted(async () => {
+  await fetchCurrentCustomer()
+  await fetchBundleProducts()
+})
 </script>
 
 <template>
@@ -304,10 +354,13 @@ watch(selectedAddressId, (newVal, oldVal) => {
                   v-model="customerName"
                   placeholder="Contoh: PT Nusantara"
                   :class="{ 'border-red-500': errors.customerName }"
-                  required
+                  readonly
                 />
                 <p v-if="errors.customerName" class="text-red-500 text-xs">
                   {{ errors.customerName }}
+                </p>
+                <p v-if="customerId" class="text-xs text-muted-foreground">
+                  Customer ID: {{ customerId }}
                 </p>
               </div>
 

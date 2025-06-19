@@ -1,7 +1,8 @@
 import { useFetch } from '#app'
 import { useRuntimeConfig } from '#imports'
-import { ref } from 'vue'
 import { orderSchema, ordersResponseSchema, type Order } from '@/components/sales-order/data/schema'
+import { ref } from 'vue'
+import { useAuthStore } from '~/stores/auth'
 
 const salesOrders = ref<Order[]>([])
 const loading = ref(false)
@@ -9,6 +10,21 @@ const error = ref<Error | null>(null)
 
 export function useSalesOrder() {
   const config = useRuntimeConfig()
+  const authStore = useAuthStore()
+
+  // Helper function to get auth headers
+  const getAuthHeaders = () => {
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+    }
+
+    // Get token from auth store
+    if (authStore.token) {
+      headers.Authorization = `Bearer ${authStore.token}`
+    }
+
+    return headers
+  }
 
   const fetchSalesOrders = async () => {
     loading.value = true
@@ -16,12 +32,12 @@ export function useSalesOrder() {
     try {
       const { data, error: fetchError } = await useFetch(`${config.public.apiBase}/orders`, {
         method: 'GET',
-        headers: authHeaders(),
+        headers: getAuthHeaders(),
         transform: (rawData) => {
           const parsed = ordersResponseSchema.safeParse(rawData)
           if (!parsed.success) {
-            console.error('Failed to parse orders:', parsed.error)
-            throw new Error('Invalid orders response')
+            console.error('Invalid orders response:', parsed.error)
+            return []
           }
           return parsed.data.data
         }
@@ -39,7 +55,7 @@ export function useSalesOrder() {
   const getSalesOrderById = async (id: number): Promise<Order | null> => {
     const { data, error: fetchError } = await useFetch(`${config.public.apiBase}/orders/${id}`, {
       method: 'GET',
-      headers: authHeaders(),
+      headers: getAuthHeaders(),
       transform: (rawData) => {
         const parsed = orderSchema.safeParse(rawData)
         if (!parsed.success) {
@@ -62,18 +78,22 @@ export function useSalesOrder() {
     const { data, error: fetchError } = await useFetch(`${config.public.apiBase}/orders`, {
       method: 'POST',
       headers: {
-        ...authHeaders(),
+        ...getAuthHeaders(),
         'Content-Type': 'application/json'
       },
       body: payload,
       transform: (rawData) => {
-        const parsed = orderSchema.safeParse(rawData)
+        const parsed = orderSchema.safeParse(rawData.order)
         if (!parsed.success) {
           console.error('Failed to parse created order:', parsed.error)
           return null
         }
-        return parsed.data
-      }
+
+        return {
+          ...parsed.data,
+          snapToken: rawData.snapToken // ambil snapToken kalau ada
+        }
+      },
     })
 
     if (fetchError.value) {
@@ -88,7 +108,7 @@ export function useSalesOrder() {
     const { data, error: fetchError } = await useFetch(`${config.public.apiBase}/orders/${id}`, {
       method: 'PUT',
       headers: {
-        ...authHeaders(),
+        ...getAuthHeaders(),
         'Content-Type': 'application/json'
       },
       body: payload,
@@ -113,7 +133,7 @@ export function useSalesOrder() {
   const deleteSalesOrder = async (id: number): Promise<boolean> => {
     const { error: fetchError } = await useFetch(`${config.public.apiBase}/orders/${id}`, {
       method: 'DELETE',
-      headers: authHeaders()
+      headers: getAuthHeaders()
     })
 
     if (fetchError.value) {
@@ -133,13 +153,5 @@ export function useSalesOrder() {
     createSalesOrder,
     updateSalesOrder,
     deleteSalesOrder,
-  }
-}
-
-function authHeaders() {
-  return {
-    Authorization:
-      'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoiam9obkBleGFtcGxlLmNvbSIsImlhdCI6MTc1MDIxMTkxMywiZXhwIjoxNzUwMjk4MzEzfQ.AMoMtg_InX_rdWO2wnFixNdB1uGcSzoBxJGK82OBXig',
-    Accept: 'application/json',
   }
 }
