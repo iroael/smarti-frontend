@@ -26,20 +26,14 @@ useHead({
   },
 })
 
-const title = 'Nuxt Shadcn UI - Dashboard Template'
-const description = 'This dashboard, built with Nuxt, Shadcn UI, and UnoCSS. It includes a dark mode toggle and is optimized for performance and data efficiency.'
+const title = 'SMARTI - Smart Monitoring Dashboard'
+const description = 'Dashboard monitoring data order, pemasangan instalasi, dan konsumsi KWH secara real-time. Dibangun dengan Nuxt, Shadcn UI, dan teknologi modern untuk efisiensi operasional.'
 
 useSeoMeta({
   title,
   description,
   ogTitle: title,
   ogDescription: description,
-  ogUrl: 'https://dashboard.dianprata.com',
-  ogImage: 'https://nuxt-shadcn-dashboard.vercel.app/social-card.png',
-  twitterTitle: title,
-  twitterDescription: description,
-  twitterImage: 'https://nuxt-shadcn-dashboard.vercel.app/social-card.png',
-  twitterCard: 'summary_large_image',
 })
 
 const router = useRouter()
