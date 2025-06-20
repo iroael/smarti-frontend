@@ -1,58 +1,9 @@
-// menus.ts
+// ~/constants/menus.ts
 import type { NavMenu, NavMenuItems } from '~/types/nav'
 
 export const navMenu: NavMenu[] = [
   {
-    heading: 'Customer Dashboard',
-    roles: ['customer'], // ⬅ Roles untuk heading
-    items: [
-      {
-        title: 'Profil Perusahaan',
-        icon: 'i-lucide-building',
-        link: '/account',
-        roles: ['customer'],
-      },
-      {
-        title: 'Product',
-        icon: 'i-lucide-box',
-        link: '/product',
-        roles: ['customer'],
-      },
-      {
-        title: 'Pesanan Saya',
-        icon: 'i-lucide-package',
-        link: '/sales-order',
-        roles: ['customer'],
-      },
-      {
-        title: 'Proyek Saya',
-        icon: 'i-lucide-home',
-        link: '/projects',
-        roles: ['customer'],
-      },
-      {
-        title: 'Status Pemasangan',
-        icon: 'i-lucide-trending-up',
-        link: '/installation-status',
-        roles: ['customer'],
-      },
-      {
-        title: 'Laporan Evaluasi Hunian',
-        icon: 'i-lucide-file-text',
-        link: '/evaluation-reports',
-        roles: ['customer'],
-      },
-      {
-        title: 'Ajukan Pemasangan',
-        icon: 'i-lucide-folder-plus',
-        link: '/installation-request',
-        roles: ['customer'],
-      },
-    ],
-  },
-  {
     heading: 'General',
-    roles: ['admin'], // ⬅ Roles untuk heading
     items: [
       {
         title: 'Dashboard',
@@ -60,17 +11,28 @@ export const navMenu: NavMenu[] = [
         link: '/',
         roles: ['admin', 'supplier', 'customer'],
       },
+      {
+        title: 'Account',
+        icon: 'i-lucide-user-cog',
+        link: '/account',
+        roles: ['supplier', 'customer'],
+      },
     ],
   },
   {
     heading: 'Business',
-    roles: ['admin', 'supplier'], // ⬅ Roles untuk heading
     items: [
       {
-        title: 'Sales Orders',
+        title: 'Products',
+        icon: 'i-lucide-box',
+        link: '/product',
+        roles: ['admin', 'supplier', 'customer'],
+      },
+      {
+        title: 'My Orders',
         icon: 'i-lucide-package',
         link: '/sales-order',
-        roles: ['admin'],
+        roles: ['customer'],
       },
       {
         title: 'Installation',
@@ -82,7 +44,6 @@ export const navMenu: NavMenu[] = [
   },
   {
     heading: 'Master',
-    roles: ['admin', 'supplier'], // ⬅ Roles untuk heading
     items: [
       {
         title: 'Customers',
@@ -97,16 +58,15 @@ export const navMenu: NavMenu[] = [
         roles: ['admin'],
       },
       {
-        title: 'Product',
+        title: 'Inventory',
         icon: 'i-lucide-warehouse',
-        link: '/product',
+        link: '/inventory',
         roles: ['admin', 'supplier'],
       },
     ],
   },
   {
     heading: 'Reports',
-    roles: ['admin', 'supplier'], // ⬅ Roles untuk heading
     items: [
       {
         title: 'Sales Report',
@@ -136,7 +96,6 @@ export const navMenu: NavMenu[] = [
   },
   {
     heading: 'Management',
-    roles: ['admin'], // ⬅ Roles untuk heading
     items: [
       {
         title: 'User Management',
@@ -156,45 +115,36 @@ export const navMenu: NavMenu[] = [
 
 export const navMenuBottom: NavMenuItems = [
   {
-    title: 'Bantuan & Tiket',
-    icon: 'i-lucide-life-buoy',
+    title: 'Help & Support',
+    icon: 'i-lucide-circle-help',
     link: '/help',
     roles: ['admin', 'supplier', 'customer'],
   },
   {
-    title: 'Panduan & Dokumen',
+    title: 'Documentation',
     icon: 'i-lucide-book-open',
     link: '/docs',
     roles: ['admin', 'supplier', 'customer'],
-  },
-  {
-    title: 'Keamanan & Login',
-    icon: 'i-lucide-lock',
-    link: '/account/security',
-    roles: ['customer'],
   },
 ]
 
 // Helper function to filter menu items by role
 export function filterMenuByRole(menu: NavMenu[], userRole: string): NavMenu[] {
   return menu
-    .filter(section => {
-      // ⬅ Filter heading berdasarkan roles
-      if (section.roles && section.roles.length > 0) {
-        return section.roles.includes(userRole)
-      }
-      return true
-    })
     .map(section => ({
       ...section,
       items: section.items.filter(item => {
+        // Handle different item types
         if ('roles' in item && item.roles) {
           return item.roles.includes(userRole)
         }
-        return true
-      }),
+        // If no roles specified, allow access (for section titles)
+        if ('heading' in item) return true
+        // Default allow if no roles specified
+        return !('roles' in item) || !item.roles
+      })
     }))
-    .filter(section => section.items.length > 0) // Filter section yang tidak memiliki items
+    .filter(section => section.items.length > 0) // Remove empty sections
 }
 
 // Helper function to filter bottom menu by role
@@ -203,6 +153,7 @@ export function filterBottomMenuByRole(menu: NavMenuItems, userRole: string): Na
     if ('roles' in item && item.roles) {
       return item.roles.includes(userRole)
     }
+    // Default allow if no roles specified
     return true
   })
 }

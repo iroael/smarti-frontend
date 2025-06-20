@@ -16,6 +16,7 @@ const form = ref({
   city: '',
   province: '',
   postalcode: '',
+  is_deleted: false,
 })
 
 const { addCustomerAddress, getCurrentCustomer } = useCustomers()
@@ -34,6 +35,7 @@ watch(
         city: '',
         province: '',
         postalcode: '',
+        is_deleted: false,
       }
 
       try {

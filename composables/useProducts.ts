@@ -29,12 +29,36 @@ export function useProducts() {
   const fetchProducts = async () => {
     loading.value = true
     try {
-      const { data } = await useFetch(`${config.public.apiBase}/products`, {
+      const { data, error } = await useFetch(`${config.public.apiBase}/products`, {
         method: 'GET',
         headers: getAuthHeaders(),
       })
-      products.value = data.value?.data ?? []
-      console.log('Fetched products:', products.value)
+      
+      if (error.value) throw error.value
+      
+      const parsed = productListSchema.parse(data.value)
+      const allProducts = parsed.data ?? []
+      
+      // Filter berdasarkan role user
+      if (authStore.user?.role === 'customer') {
+        // Hanya tampilkan bundle products untuk customer
+        products.value = allProducts.filter((p) => p.is_bundle === true)
+        console.log('Fetched bundle products for customer:', products.value)
+      } else {
+        // Tampilkan semua produk untuk role lain (admin, etc.)
+        products.value = allProducts
+        console.log('Fetched all products for admin:', products.value)
+      }
+      
+      if (products.value.length === 0) {
+        console.warn(authStore.user?.role === 'customer' 
+          ? 'Tidak ada produk bundle ditemukan.' 
+          : 'Tidak ada produk ditemukan.')
+      }
+    }
+    catch (err) {
+      console.error('Gagal mengambil produk:', err)
+      throw err
     }
     finally {
       loading.value = false
@@ -134,10 +158,21 @@ export function useProducts() {
     }
   }
 
+  // Helper function untuk mengambil produk berdasarkan role
+  const fetchProductsByRole = async () => {
+    if (authStore.user?.role === 'customer') {
+      await fetchBundleProducts()
+      products.value = bundleProducts.value
+    } else {
+      await fetchProducts()
+    }
+  }
+
   return {
     products,
     loading,
     fetchProducts,
+    fetchProductsByRole,
     getProductById,
     createProduct,
     updateProduct,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { NavGroup, NavLink, NavSectionTitle } from '~/types/nav'
-import { navMenu, navMenuBottom } from '~/constants/menus'
+import { navMenu, navMenuBottom, filterMenuByRole, filterBottomMenuByRole } from '~/constants/menus'
 import { useAuthStore } from '~/stores/auth'
 
 const authStore = useAuthStore()
@@ -13,11 +13,29 @@ function resolveNavItemComponent(item: NavLink | NavGroup | NavSectionTitle): an
   return resolveComponent('LayoutSidebarNavLink')
 }
 
+const role = computed(() => authStore.user?.role || 'guest')
+
+// Filter menu items based on user role
+const filteredNavMenu = computed(() => {
+  const currentRole = role.value
+  if (currentRole === 'guest') return []
+
+  return filterMenuByRole(navMenu, currentRole)
+})
+
+// Filter bottom menu items based on user role
+const filteredNavMenuBottom = computed(() => {
+  const currentRole = role.value
+  if (currentRole === 'guest') return []
+
+  return filterBottomMenuByRole(navMenuBottom, currentRole)
+})
+
 const teams = [
   {
     name: 'SMARTI.ID',
     logo: 'i-lucide-gallery-vertical-end',
-    plan: 'Enterprise',
+    plan: role,
   },
 ]
 
@@ -31,10 +49,11 @@ onMounted(async () => {
 const user = computed(() => {
   const u = authStore.user
   return {
-    name: u?.name || 'Unknown',
+    name: u?.profile.name || 'Unknown',
     email: u?.email || '',
     avatar: u?.avatar || '/avatars/default.png',
-    npwp: u?.npwp || '',
+    npwp: u?.profile.npwp || '',
+    role: u?.role || 'guest',
   }
 })
 </script>
@@ -47,7 +66,13 @@ const user = computed(() => {
     </SidebarHeader>
 
     <SidebarContent>
-      <SidebarGroup v-for="(nav, indexGroup) in navMenu" :key="indexGroup">
+      <!-- Show message if user is guest or no menu items available -->
+      <div v-if="role === 'guest' || filteredNavMenu.length === 0" class="p-4 text-center text-muted-foreground">
+        <p>No menu items available for your role.</p>
+      </div>
+
+      <!-- Render filtered menu items -->
+      <SidebarGroup v-for="(nav, indexGroup) in filteredNavMenu" :key="indexGroup">
         <SidebarGroupLabel v-if="nav.heading">
           {{ nav.heading }}
         </SidebarGroupLabel>
@@ -59,10 +84,11 @@ const user = computed(() => {
         />
       </SidebarGroup>
 
-      <SidebarGroup class="mt-auto">
+      <!-- Bottom menu items -->
+      <SidebarGroup v-if="filteredNavMenuBottom.length > 0" class="mt-auto">
         <component
           :is="resolveNavItemComponent(item)"
-          v-for="(item, index) in navMenuBottom"
+          v-for="(item, index) in filteredNavMenuBottom"
           :key="index"
           :item="item"
           size="sm"

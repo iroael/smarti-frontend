@@ -56,7 +56,7 @@ const dir = computed(() => textDirection.value === 'rtl' ? 'rtl' : 'ltr')
         <NuxtPage />
       </NuxtLayout>
 
-      <AppSettings />
+      <!-- <AppSettings /> -->
     </div>
 
     <Toaster />
