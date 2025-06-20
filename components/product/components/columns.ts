@@ -1,11 +1,11 @@
 // columns.ts
-import type { ColumnDef } from '@tanstack/vue-table'
 import type { Product } from '@/types/schema'
+import { Badge } from '@/components/ui/badge'
+import type { ColumnDef } from '@tanstack/vue-table'
 import { Checkbox } from '@/components/ui/checkbox'
 import { h } from 'vue'
 import DataTableColumnHeader from './DataTableColumnHeader.vue'
 import DataTableRowActions from './DataTableRowActions.vue'
-import { Badge } from '@/components/ui/badge'
 
 export const columns = (onDeleteSuccess: () => void): ColumnDef<Product>[] => [
   {
@@ -60,6 +60,15 @@ export const columns = (onDeleteSuccess: () => void): ColumnDef<Product>[] => [
     cell: ({ row }) => h('span', {}, row.getValue('stock')),
   },
   {
+    id: 'supplier',
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Supplier' }),
+    cell: ({ row }) => {
+      const product = row.original
+      const supplierName = product.supplier?.name || '-'
+      return h('span', supplierName)
+    },
+  },
+  {
     accessorKey: 'is_bundle',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Bundle?' }),
     cell: ({ row }) => {
@@ -71,6 +80,7 @@ export const columns = (onDeleteSuccess: () => void): ColumnDef<Product>[] => [
   },
   {
     id: 'actions',
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Action' }),
     cell: ({ row }) =>
       h(DataTableRowActions, {
         row,

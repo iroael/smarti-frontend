@@ -4,6 +4,9 @@ import type { Order } from '../data/schema'
 import { computed } from 'vue'
 import { labels } from '../data/data'
 import { orderSchema } from '../data/schema'
+import { useRouter } from 'vue-router' // or 'nuxt/app' in Nuxt 3
+
+const router = useRouter()
 
 interface DataTableRowActionsProps {
   row: Row<Order>
@@ -11,6 +14,9 @@ interface DataTableRowActionsProps {
 const props = defineProps<DataTableRowActionsProps>()
 
 const order = computed(() => orderSchema.parse(props.row.original))
+const goToDetail = () => {
+  router.push(`/sales-order/details/${order.value.id}`)
+}
 </script>
 
 <template>
@@ -25,25 +31,7 @@ const order = computed(() => orderSchema.parse(props.row.original))
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" class="w-[160px]">
-      <DropdownMenuItem>Edit</DropdownMenuItem>
-      <DropdownMenuItem>Make a copy</DropdownMenuItem>
-      <DropdownMenuItem>Favorite</DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <DropdownMenuSub>
-        <DropdownMenuSubTrigger>Labels</DropdownMenuSubTrigger>
-        <DropdownMenuSubContent>
-          <DropdownMenuRadioGroup :value="order.label">
-            <DropdownMenuRadioItem v-for="label in labels" :key="label.value" :value="label.value">
-              {{ label.label }}
-            </DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </DropdownMenuSubContent>
-      </DropdownMenuSub>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem>
-        Delete
-        <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
-      </DropdownMenuItem>
+      <DropdownMenuItem @click="goToDetail">View</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
