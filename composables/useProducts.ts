@@ -215,7 +215,7 @@ export function useProducts() {
   const fetchProductNonBundle = async () => {
     loading.value = true
     try {
-      const { data } = await useFetch(`${config.public.apiBase}/products`, {
+      const { data } = await useFetch(`${config.public.apiBase}/products/admin/all`, {
         method: 'GET',
         headers: getAuthHeaders(),
       })
@@ -233,7 +233,7 @@ export function useProducts() {
   const fetchBundleProducts = async () => {
     loading.value = true
     try {
-      const { data, error } = await useFetch(`${config.public.apiBase}/products`, {
+      const { data, error } = await useFetch(`${config.public.apiBase}/products/admin/all`, {
         method: 'GET',
         headers: getAuthHeaders(),
       })
