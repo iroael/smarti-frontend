@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
-import { useCustomers } from '@/composables/useCustomers'
+import { useAuth } from '@/composables/useAuth' // Import useAuth instead of useCustomers
+import { useAuthStore } from '~/stores/auth' // Import auth store directly
 import { 
   Edit2, 
   Trash2, 
@@ -21,7 +22,8 @@ import {
 } from 'lucide-vue-next'
 import { onMounted, ref, computed } from 'vue'
 
-const { getCurrentCustomer, setDefaultCustomerAddress, deleteAddressCustomer } = useCustomers()
+const { user } = useAuth() // Use useAuth composable
+const authStore = useAuthStore() // Use auth store for fetchProfile
 const { toast } = useToast()
 
 const addresses = ref<any[]>([])
@@ -35,21 +37,29 @@ const deleteLoading = ref(false)
 const defaultAddress = computed(() => addresses.value.find(addr => addr.isDefault))
 const otherAddresses = computed(() => addresses.value.filter(addr => !addr.isDefault))
 
-const fetchCustomerAddresses = async () => {
+const fetchUserAddresses = async () => {
   try {
-    const { data } = await getCurrentCustomer()
-    addresses.value = data.addresses.map((addr: any) => ({
-      id: addr.id,
-      label: addr.label ?? addr.name,
-      name: addr.name,
-      phone: addr.phone,
-      email: addr.email,
-      address: addr.address,
-      city: addr.city,
-      province: addr.province,
-      postalCode: addr.postalcode,
-      isDefault: addr.is_default,
-    }))
+    // Refresh user data to get latest addresses using auth store
+    await authStore.fetchProfile()
+    
+    if (user.value?.profile?.addresses) {
+      addresses.value = user.value.profile.addresses.map((addr: any) => ({
+        id: addr.id,
+        label: addr.name, // Using name as label since there's no separate label field
+        name: addr.name,
+        phone: addr.phone,
+        email: user.value?.email || '', // Use user email as address email
+        address: addr.address,
+        city: addr.city,
+        province: addr.province,
+        postalCode: addr.postalcode,
+        isDefault: addr.is_default,
+        isDeleted: addr.is_deleted,
+        createdAt: addr.created_at,
+      })).filter((addr: any) => !addr.isDeleted) // Filter out deleted addresses
+    } else {
+      addresses.value = []
+    }
   }
   catch (error) {
     console.error('Gagal mengambil alamat:', error)
@@ -75,8 +85,16 @@ async function confirmSetDefault() {
   if (selectedAddressId.value === null) return
 
   try {
-    await setDefaultCustomerAddress(1, selectedAddressId.value)
-    await fetchCustomerAddresses()
+    // API call to set default address
+    await $fetch(`/addresses/${selectedAddressId.value}/set-default`, {
+      method: 'PATCH',
+      baseURL: useRuntimeConfig().public.apiBase,
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+      },
+    })
+
+    await fetchUserAddresses()
 
     toast({
       title: 'Berhasil!',
@@ -85,6 +103,7 @@ async function confirmSetDefault() {
     })
   }
   catch (error) {
+    console.error('Error setting default address:', error)
     toast({
       title: 'Gagal',
       description: 'Tidak dapat mengubah alamat utama.',
@@ -102,8 +121,16 @@ async function confirmDelete() {
 
   deleteLoading.value = true
   try {
-    await deleteAddressCustomer(selectedAddressId.value)
-    await fetchCustomerAddresses()
+    // API call to delete address
+    await $fetch(`/addresses/${selectedAddressId.value}`, {
+      method: 'DELETE',
+      baseURL: useRuntimeConfig().public.apiBase,
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+      },
+    })
+
+    await fetchUserAddresses()
 
     toast({
       title: 'Berhasil!',
@@ -128,7 +155,7 @@ async function confirmDelete() {
 
 onMounted(async () => {
   loading.value = true
-  await fetchCustomerAddresses()
+  await fetchUserAddresses()
   loading.value = false
 })
 </script>
@@ -152,7 +179,6 @@ onMounted(async () => {
         Tambah Alamat Baru
       </Button>
     </div>
-
     <!-- Loading State -->
     <div v-if="loading" class="space-y-4">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -366,7 +392,7 @@ onMounted(async () => {
       :open="showAddressForm" 
       @close="() => {
         showAddressForm = false
-        fetchCustomerAddresses()
+        fetchUserAddresses()
       }"
     />
   </div>

@@ -32,11 +32,6 @@ import { useProducts } from '@/composables/useProducts'
 import { useSalesOrder } from '@/composables/useSalesOrder'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-const preselectedProductId = ref<number | null>(null)
-
 
 const { createSalesOrder } = useSalesOrder()
 const { getCurrentCustomer } = useCustomers()
@@ -73,7 +68,7 @@ const fetchCurrentCustomer = async () => {
 // PPN Configuration
 const PPN_RATE = 0.11 // 11%
 
-// customer addresses data
+// Dummy customer addresses data
 const customerAddresses = ref<any[]>([])
 
 // Form state
@@ -115,53 +110,39 @@ const validateForm = () => {
 // Item management functions
 const toggleItem = (productId: number, checked: boolean) => {
   const idx = selectedItems.value.findIndex(i => i.productId === productId)
-
   if (checked && idx === -1) {
-    // Pastikan default quantity = 1
-    selectedItems.value.push({
-      productId,
-      quantity: 1
-    })
+    selectedItems.value.push({ productId, quantity: 1 })
   } else if (!checked && idx !== -1) {
     selectedItems.value.splice(idx, 1)
   }
-
-  // Bersihkan error stok jika ada
+  // Clear stock error when item is toggled
   delete errors.value[`stock_${productId}`]
 }
 
 const updateQuantity = (productId: number, value: number) => {
   const item = selectedItems.value.find(i => i.productId === productId)
   const product = bundleProducts.value.find(p => p.id === productId)
-
-  // ✅ Tangani kasus item tidak ditemukan
-  if (!item) {
-    console.warn(`Item dengan productId ${productId} tidak ditemukan di selectedItems`)
-    return
-  }
-
-  if (!product) {
-    console.warn(`Product dengan ID ${productId} tidak ditemukan di bundleProducts`)
-    return
-  }
-
-  const maxQuantity = Math.min(value, product.stock)
-  item.quantity = Math.max(1, maxQuantity)
-
-  if (item.quantity <= product.stock) {
-    delete errors.value[`stock_${productId}`]
+  
+  if (item && product) {
+    const maxQuantity = Math.min(value, product.stock)
+    item.quantity = Math.max(1, maxQuantity)
+    
+    // Clear stock error if quantity is valid
+    if (item.quantity <= product.stock) {
+      delete errors.value[`stock_${productId}`]
+    }
   }
 }
 
-
 // Helper functions
-const isChecked = (id: number) => !!selectedItems.value[id]
-const getQuantity = (id: number) => selectedItems.value[id] || 1
+const isChecked = (productId: number) =>
+  selectedItems.value.some(i => i.productId === productId)
+
+const getQuantity = (productId: number) =>
+  selectedItems.value.find(i => i.productId === productId)?.quantity || 1
 
 const getProductPrice = (productId: number): number => {
-  // alert(productId)
   const product = bundleProducts.value.find(p => p.id === productId)
-  console.log('bundleProducts', bundleProducts.value)
   return parseFloat(product?.prices?.[0]?.h_jual_b || '0')
 }
 
@@ -201,8 +182,6 @@ const handleAddressChange = (value: any) => {
 // Computed values for pricing
 const subtotal = computed(() =>
   selectedItems.value.reduce((sum, item) => {
-    console.log('subtotal',item)
-    console.log('item.productId',item.productId)
     const price = getProductPrice(item.productId)
     return sum + price * item.quantity
   }, 0),
@@ -302,20 +281,8 @@ watch(selectedAddressId, (newVal, oldVal) => {
 
 // Initialize data on component mount
 onMounted(async () => {
-  const productIdParam = route.query.product_id
-  if (productIdParam) {
-    preselectedProductId.value = Number.parseInt(productIdParam as string)
-  }
-
   await fetchCurrentCustomer()
   await fetchBundleProducts()
-
-  if (preselectedProductId.value) {
-    const matched = bundleProducts.value.find(p => p.id === preselectedProductId.value)
-    if (matched && matched.stock > 0) {
-      selectedItems.value[matched.id] = 1 
-    }
-  }
 })
 </script>
 

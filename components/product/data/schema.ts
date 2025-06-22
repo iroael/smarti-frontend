@@ -13,6 +13,7 @@ const priceSchema = z.object({
 const supplierSchema = z.object({
   id: z.number(),
   name: z.string(),
+  supplier_code: z.string(),
   address: z.string(),
   phone: z.string(),
   email: z.string(),

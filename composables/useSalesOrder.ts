@@ -1,6 +1,6 @@
 import { useFetch } from '#app'
 import { useRuntimeConfig } from '#imports'
-import { orderSchema, ordersResponseSchema, type Order } from '@/components/sales-order/data/schema'
+import { orderSchema, ordersResponseSchema, type Order } from '@/components/orders/data/schema'
 import { ref } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 
@@ -37,6 +37,60 @@ export function useSalesOrder() {
           const parsed = ordersResponseSchema.safeParse(rawData)
           if (!parsed.success) {
             console.error('Invalid orders response:', parsed.error)
+            return []
+          }
+          return parsed.data.data
+        }
+      })
+
+      if (fetchError.value) throw fetchError.value
+      salesOrders.value = data.value ?? []
+    } catch (err) {
+      error.value = err as Error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ✅ Fetch orders created by the current user (customer or supplier)
+  const fetchMyOrders = async () => {
+    loading.value = true
+    error.value = null
+    try {
+      const { data, error: fetchError } = await useFetch(`${config.public.apiBase}/orders/me`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+        transform: (rawData) => {
+          const parsed = ordersResponseSchema.safeParse(rawData)
+          if (!parsed.success) {
+            console.error('Invalid my orders response:', parsed.error)
+            return []
+          }
+          return parsed.data.data
+        }
+      })
+
+      if (fetchError.value) throw fetchError.value
+      salesOrders.value = data.value ?? []
+    } catch (err) {
+      error.value = err as Error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ✅ Fetch incoming orders for current supplier
+  const fetchIncomingOrders = async () => {
+    loading.value = true
+    error.value = null
+    try {
+      const { data, error: fetchError } = await useFetch(`${config.public.apiBase}/orders/incoming`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+        transform: (rawData) => {
+          const parsed = ordersResponseSchema.safeParse(rawData)
+          if (!parsed.success) {
+            console.error('Invalid incoming orders response:', parsed.error)
             return []
           }
           return parsed.data.data
@@ -149,6 +203,8 @@ export function useSalesOrder() {
     loading,
     error,
     fetchSalesOrders,
+    fetchMyOrders,
+    fetchIncomingOrders,
     getSalesOrderById,
     createSalesOrder,
     updateSalesOrder,

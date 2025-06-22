@@ -5,7 +5,8 @@ import { ref } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 
 const bundleProducts = ref<Product[]>([])
-const products = ref([])
+const products = ref<Product[]>([])
+const nonBundleProducts = ref<Product[]>([])
 const loading = ref(false)
 
 export function useProducts() {
@@ -26,6 +27,56 @@ export function useProducts() {
     return headers
   }
 
+  // Enhanced function to fetch products based on role with proper endpoints
+  const fetchProductsByRole = async () => {
+    loading.value = true
+    try {
+      const userRole = authStore.user?.role
+      let endpoint = `${config.public.apiBase}/products`
+      
+      // Use specific endpoints based on role for better API alignment
+      if (userRole === 'supplier') {
+        // Suppliers see their own products by default
+        endpoint = `${config.public.apiBase}/products/my`
+      } else if (userRole === 'customer') {
+        // Customers see catalog products (from other suppliers they have access to)
+        endpoint = `${config.public.apiBase}/products/catalog`
+      }
+      // Admin and other roles use the default endpoint
+
+      const { data, error } = await useFetch(endpoint, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      })
+
+      if (error.value) throw error.value
+
+      const parsed = productListSchema.parse(data.value)
+      const allProducts = parsed.data ?? []
+
+      // Additional client-side filtering for customers (bundle products only)
+      if (userRole === 'customer') {
+        products.value = allProducts.filter((p) => p.is_bundle === true)
+        console.log('Fetched bundle products for customer:', products.value)
+      } else {
+        products.value = allProducts
+        console.log(`Fetched products for ${userRole}:`, products.value)
+      }
+
+      if (products.value.length === 0) {
+        console.warn(userRole === 'customer' 
+          ? 'Tidak ada produk bundle ditemukan.' 
+          : 'Tidak ada produk ditemukan.')
+      }
+    } catch (err) {
+      console.error('Gagal mengambil produk:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Legacy function - kept for backward compatibility
   const fetchProducts = async () => {
     loading.value = true
     try {
@@ -33,12 +84,12 @@ export function useProducts() {
         method: 'GET',
         headers: getAuthHeaders(),
       })
-      
+
       if (error.value) throw error.value
-      
+
       const parsed = productListSchema.parse(data.value)
       const allProducts = parsed.data ?? []
-      
+
       // Filter berdasarkan role user
       if (authStore.user?.role === 'customer') {
         // Hanya tampilkan bundle products untuk customer
@@ -55,12 +106,64 @@ export function useProducts() {
           ? 'Tidak ada produk bundle ditemukan.' 
           : 'Tidak ada produk ditemukan.')
       }
-    }
-    catch (err) {
+    } catch (err) {
       console.error('Gagal mengambil produk:', err)
       throw err
+    } finally {
+      loading.value = false
     }
-    finally {
+  }
+
+  // Fetch catalog products (for customers to see products from suppliers they have access to)
+  const fetchCatalogProducts = async () => {
+    loading.value = true
+    try {
+      const { data, error } = await useFetch(`${config.public.apiBase}/products/catalog`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      })
+
+      if (error.value) throw error.value
+
+      const parsed = productListSchema.parse(data.value)
+      products.value = parsed.data ?? []
+      
+      console.log('Fetched catalog products:', products.value)
+      
+      if (products.value.length === 0) {
+        console.warn('Tidak ada produk katalog ditemukan.')
+      }
+    } catch (err) {
+      console.error('Gagal mengambil produk katalog:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Fetch supplier's own products
+  const fetchMyProducts = async () => {
+    loading.value = true
+    try {
+      const { data, error } = await useFetch(`${config.public.apiBase}/products/my`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      })
+
+      if (error.value) throw error.value
+
+      const parsed = productListSchema.parse(data.value)
+      products.value = parsed.data ?? []
+      
+      console.log('Fetched my products:', products.value)
+      
+      if (products.value.length === 0) {
+        console.warn('Tidak ada produk saya ditemukan.')
+      }
+    } catch (err) {
+      console.error('Gagal mengambil produk saya:', err)
+      throw err
+    } finally {
       loading.value = false
     }
   }
@@ -70,8 +173,7 @@ export function useProducts() {
       method: 'GET',
       headers: getAuthHeaders(),
     })
-    if (error.value)
-      throw error.value
+    if (error.value) throw error.value
     return data.value
   }
 
@@ -84,8 +186,7 @@ export function useProducts() {
       },
       body: payload,
     })
-    if (error.value)
-      throw error.value
+    if (error.value) throw error.value
     return data.value
   }
 
@@ -98,8 +199,7 @@ export function useProducts() {
       },
       body: payload,
     })
-    if (error.value)
-      throw error.value
+    if (error.value) throw error.value
     return data.value
   }
 
@@ -108,12 +208,9 @@ export function useProducts() {
       method: 'DELETE',
       headers: getAuthHeaders(),
     })
-    if (error.value)
-      throw error.value
+    if (error.value) throw error.value
     return data.value
   }
-
-  const nonBundleProducts = ref([])
 
   const fetchProductNonBundle = async () => {
     loading.value = true
@@ -128,8 +225,7 @@ export function useProducts() {
       if (nonBundleProducts.value.length === 0) {
         console.warn('No non-bundle products found')
       }
-    }
-    finally {
+    } finally {
       loading.value = false
     }
   }
@@ -143,10 +239,10 @@ export function useProducts() {
       })
 
       if (error.value) throw error.value
-
+      
       const parsed = productListSchema.parse(data.value)
       bundleProducts.value = parsed.data.filter((p) => p.is_bundle === true)
-
+      
       if (bundleProducts.value.length === 0) {
         console.warn('Tidak ada produk bundle ditemukan.')
       }
@@ -158,28 +254,55 @@ export function useProducts() {
     }
   }
 
-  // Helper function untuk mengambil produk berdasarkan role
-  const fetchProductsByRole = async () => {
-    if (authStore.user?.role === 'customer') {
-      await fetchBundleProducts()
-      products.value = bundleProducts.value
-    } else {
-      await fetchProducts()
+  // Fetch products from specific supplier
+  const fetchProductsBySupplier = async (supplierId: number) => {
+    loading.value = true
+    try {
+      const { data, error } = await useFetch(`${config.public.apiBase}/products/supplier/${supplierId}`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      })
+
+      if (error.value) throw error.value
+
+      const parsed = productListSchema.parse(data.value)
+      products.value = parsed.data ?? []
+      
+      console.log(`Fetched products from supplier ${supplierId}:`, products.value)
+      
+      if (products.value.length === 0) {
+        console.warn(`Tidak ada produk dari supplier ${supplierId} ditemukan.`)
+      }
+    } catch (err) {
+      console.error(`Gagal mengambil produk dari supplier ${supplierId}:`, err)
+      throw err
+    } finally {
+      loading.value = false
     }
   }
 
   return {
+    // State
     products,
+    bundleProducts,
+    nonBundleProducts,
     loading,
-    fetchProducts,
-    fetchProductsByRole,
+    
+    // Main functions
+    fetchProductsByRole, // Recommended: Use this for role-based fetching
+    fetchProducts, // Legacy: Kept for backward compatibility
+    
+    // Specific functions
+    fetchCatalogProducts,
+    fetchMyProducts,
+    fetchBundleProducts,
+    fetchProductNonBundle,
+    fetchProductsBySupplier,
+    
+    // CRUD operations
     getProductById,
     createProduct,
     updateProduct,
     deleteProduct,
-    fetchProductNonBundle,
-    fetchBundleProducts,
-    bundleProducts,
-    nonBundleProducts,
   }
 }

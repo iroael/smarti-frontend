@@ -26,6 +26,12 @@ const handleAddCustomer = async (data: any) => {
     console.error('Failed to add customer:', err)
   }
 }
+
+
+// Handler dipanggil saat 1 produk berhasil dihapus
+const handleDeleteSuccess = async () => {
+  await fetchCustomers()
+}
 </script>
 
 <template>
@@ -55,7 +61,7 @@ const handleAddCustomer = async (data: any) => {
     <DataTable
       v-else
       :data="customers || []"
-      :columns="columns"
+      :columns="columns(handleDeleteSuccess)"
     />
 
     <AddCustomerModal

@@ -57,7 +57,7 @@ export const navMenu: NavMenu[] = [
       {
         title: 'Katalog Product',
         icon: 'i-lucide-box',
-        link: '/product/catalog',
+        link: '/product/katalog',
         roles: ['supplier'],
       },
       {
@@ -75,7 +75,7 @@ export const navMenu: NavMenu[] = [
       {
         title: 'Produk Saya',
         icon: 'i-lucide-box',
-        link: '/product/my',
+        link: '/product',
         roles: ['supplier'],
       },
       {

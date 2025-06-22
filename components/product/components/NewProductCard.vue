@@ -94,14 +94,6 @@ const getStockStatus = () => {
   if (props.product.stock > 0) return { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' }
   return { color: 'text-gray-500', bg: 'bg-gray-50', border: 'border-gray-200' }
 }
-
-// Bundle items collapse state
-const showAllBundleItems = ref(false)
-
-// Toggle bundle items visibility
-const toggleBundleItems = () => {
-  showAllBundleItems.value = !showAllBundleItems.value
-}
 </script>
 
 <template>
@@ -143,8 +135,7 @@ const toggleBundleItems = () => {
           
           <!-- Pulse animation for bundle -->
           <div v-if="(product as any).is_bundle" 
-               class="absolute inset-0 w-24 h-24 rounded-2xl border-2 border-emerald-400/30 animate-pulse-slow">
-          </div>
+               class="absolute inset-0 w-24 h-24 rounded-2xl border-2 border-emerald-400/30 animate-pulse-slow"></div>
         </div>
       </div>
       
@@ -175,7 +166,7 @@ const toggleBundleItems = () => {
       <div class="absolute top-5 right-5 flex flex-col gap-2 items-end">
         <!-- Product ID -->
         <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-mono text-gray-700 bg-white/80 backdrop-blur-sm shadow-sm border border-white/50">
-          #{{ product.product_code }}
+          #{{ product.id }}
         </span>
         
         <!-- Stock Status -->
@@ -199,50 +190,6 @@ const toggleBundleItems = () => {
           {{ product.description || 'Deskripsi produk tidak tersedia. Silakan hubungi tim sales untuk informasi lebih lanjut.' }}
         </p>
       </div>
-
-      <!-- Product Quick Details (moved to top) -->
-      <div class="bg-gradient-to-br from-gray-50 to-gray-100/30 rounded-xl p-4 border border-gray-200/50">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          
-          <!-- Price -->
-          <div class="flex items-center justify-center p-3 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all duration-200">
-            <div class="text-center">
-              <div class="text-xs text-gray-500 mb-1">Price</div>
-              <div class="text-lg font-bold text-green-600">
-                {{ formatCurrency(getPrice()) }}
-              </div>
-            </div>
-          </div>
-          
-          <!-- Stock -->
-          <div class="flex items-center justify-center p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition-all duration-200"
-               :class="product.stock > 0 ? 'hover:shadow-md hover:border-green-200' : 'hover:shadow-md hover:border-red-200'">
-            <div class="text-center">
-              <div class="text-xs text-gray-500 mb-1">Stock</div>
-              <div class="flex items-center justify-center">
-                <div class="w-2 h-2 rounded-full mr-2" 
-                     :class="product.stock > 0 ? 'bg-green-500 animate-pulse' : 'bg-red-500'"></div>
-                <span class="text-sm font-bold" :class="product.stock > 0 ? 'text-green-600' : 'text-red-500'">
-                  {{ product.stock > 0 ? product.stock : 'Out' }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Supplier Info (if exists) -->
-        <div v-if="getSupplierName()" class="mt-3 pt-3 border-t border-gray-200">
-          <div class="flex items-center justify-center p-2 bg-white rounded-lg shadow-sm border border-gray-100">
-            <div class="flex items-center text-sm">
-              <svg class="w-4 h-4 text-purple-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              <span class="text-gray-600 mr-2">Supplier:</span>
-              <span class="font-semibold text-gray-700">{{ getSupplierName() }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
       
       <!-- Enhanced Bundle Items Display -->
       <div v-if="(product as any).is_bundle && getBundleItems().length > 0" class="space-y-4">
@@ -256,32 +203,12 @@ const toggleBundleItems = () => {
           <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">
             {{ getBundleItems().length }} items
           </span>
-
-            <!-- Toggle button for more items -->
-            <div v-if="getBundleItems().length > 2" 
-                 @click="toggleBundleItems"
-                 class="text-center py-3 text-sm text-blue-600 bg-white/70 rounded-lg border border-blue-200 border-dashed hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 cursor-pointer select-none">
-              <div class="flex items-center justify-center">
-                <svg class="w-4 h-4 mr-2 transition-transform duration-200" 
-                     :class="showAllBundleItems ? 'rotate-180' : ''" 
-                     fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                </svg>
-                <span class="font-medium">
-                  {{ showAllBundleItems 
-                    ? 'Show Less' 
-                    : `Show ${getBundleItems().length - 2}` 
-                  }}
-                </span>
-              </div>
-            </div>
         </div>
         
         <div class="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-4 border border-gray-200/50">
           <div class="space-y-3">
-            <!-- Show first 2 items -->
             <div 
-              v-for="(item, index) in (showAllBundleItems ? getBundleItems() : getBundleItems().slice(0, 2))" 
+              v-for="(item, index) in getBundleItems().slice(0, 3)" 
               :key="item.id || index"
               class="flex items-center p-3 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-200"
             >
@@ -303,9 +230,112 @@ const toggleBundleItems = () => {
               </div>
             </div>
             
+            <!-- Show more indicator -->
+            <div v-if="getBundleItems().length > 3" 
+                 class="text-center py-3 text-sm text-gray-600 bg-white/70 rounded-lg border border-gray-200 border-dashed hover:bg-white hover:border-gray-300 transition-all duration-200 cursor-pointer">
+              <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+              </svg>
+              <span class="font-medium">{{ getBundleItems().length - 3 }} more items included</span>
+            </div>
           </div>
         </div>
       </div>
+      
+      <!-- Enhanced Product Details Grid -->
+      <div class="bg-gradient-to-br from-gray-50 to-gray-100/30 rounded-xl p-5 border border-gray-200/50">
+        <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+          <svg class="w-4 h-4 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clip-rule="evenodd"/>
+          </svg>
+          Product Details
+        </h3>
+        
+        <div class="grid grid-cols-1 gap-3">
+          <!-- Price -->
+          <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all duration-200 group/item">
+            <div class="flex items-center">
+              <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mr-3">
+                <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+              <div>
+                <span class="text-sm font-medium text-gray-900">Price</span>
+                <p class="text-xs text-gray-500 mt-0.5">Selling price</p>
+              </div>
+            </div>
+            <span class="text-lg font-bold text-gray-900 group-hover/item:text-green-600 transition-colors duration-200">
+              {{ formatCurrency(getPrice()) }}
+            </span>
+          </div>
+          
+          <!-- Stock -->
+          <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 group/item"
+               :class="product.stock > 0 ? 'hover:border-green-200' : 'hover:border-red-200'">
+            <div class="flex items-center">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center mr-3"
+                   :class="product.stock > 0 ? 'bg-green-100' : 'bg-red-100'">
+                <svg class="w-5 h-5" :class="product.stock > 0 ? 'text-green-600' : 'text-red-600'" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+              <div>
+                <span class="text-sm font-medium text-gray-900">Stock</span>
+                <p class="text-xs text-gray-500 mt-0.5">Available quantity</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-lg font-bold" :class="product.stock > 0 ? 'text-green-600' : 'text-red-500'">
+                {{ product.stock > 0 ? product.stock : '0' }}
+              </span>
+              <p class="text-xs" :class="product.stock > 0 ? 'text-green-500' : 'text-red-500'">
+                {{ product.stock > 0 ? 'Available' : 'Out of stock' }}
+              </p>
+            </div>
+          </div>
+          
+          <!-- Code/SKU -->
+          <div v-if="product.sku || getProductCode()" 
+               class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all duration-200 group/item">
+            <div class="flex items-center">
+              <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3">
+                <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+              <div>
+                <span class="text-sm font-medium text-gray-900">{{ product.sku ? 'SKU' : 'Code' }}</span>
+                <p class="text-xs text-gray-500 mt-0.5">Product identifier</p>
+              </div>
+            </div>
+            <span class="text-sm font-mono text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg border group-hover/item:bg-blue-50 group-hover/item:text-blue-700 group-hover/item:border-blue-200 transition-all duration-200">
+              {{ product.sku || getProductCode() }}
+            </span>
+          </div>
+          
+          <!-- Supplier -->
+          <div v-if="getSupplierName()" 
+               class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md hover:border-purple-200 transition-all duration-200 group/item">
+            <div class="flex items-center">
+              <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mr-3">
+                <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <span class="text-sm font-medium text-gray-900">Supplier</span>
+                <p class="text-xs text-gray-500 mt-0.5">Product supplier</p>
+              </div>
+            </div>
+            <span class="text-sm text-gray-700 font-semibold bg-gray-100 px-3 py-1.5 rounded-lg group-hover/item:bg-purple-50 group-hover/item:text-purple-700 transition-all duration-200">
+              {{ getSupplierName() }}
+            </span>
+          </div>
+        </div>
+      </div>
+      
       <!-- Enhanced Order Button -->
       <div class="pt-2">
         <button 

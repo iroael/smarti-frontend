@@ -15,7 +15,7 @@ const props = defineProps<DataTableRowActionsProps>()
 
 const order = computed(() => orderSchema.parse(props.row.original))
 const goToDetail = () => {
-  router.push(`/sales-order/details/${order.value.id}`)
+  router.push(`/orders/details/${order.value.id}`)
 }
 </script>
 

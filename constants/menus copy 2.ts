@@ -31,7 +31,7 @@ export const navMenu: NavMenu[] = [
       {
         title: 'My Orders',
         icon: 'i-lucide-package',
-        link: '/sales-order',
+        link: '/orders',
         roles: ['customer'],
       },
       {

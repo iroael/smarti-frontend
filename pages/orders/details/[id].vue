@@ -4,7 +4,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSalesOrder } from '~/composables/useSalesOrder'
-import type { Order } from '@/components/sales-order/data/schema'
+import type { Order } from '@/components/orders/data/schema'
 
 const route = useRoute()
 const router = useRouter()
@@ -125,11 +125,11 @@ const fetchOrderData = async () => {
 
 // Action methods
 const goBack = () => {
-  router.push('/sales-orders')
+  router.push('/orderss')
 }
 
 const editOrder = () => {
-  router.push(`/sales-orders/${order.value?.id}/edit`)
+  router.push(`/orderss/${order.value?.id}/edit`)
 }
 
 const cancelOrder = async () => {

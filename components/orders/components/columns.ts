@@ -11,49 +11,44 @@ import DataTableRowActions from './DataTableRowActions.vue'
 
 export const columns: ColumnDef<Order>[] = [
   {
-    id: 'select',
-    header: ({ table }) =>
-      h(Checkbox, {
-        checked:
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate'),
-        'onUpdate:checked': value => table.toggleAllPageRowsSelected(!!value),
-        ariaLabel: 'Select all',
-        class: 'translate-y-0.5',
-      }),
-    cell: ({ row }) =>
-      h(Checkbox, {
-        checked: row.getIsSelected(),
-        'onUpdate:checked': value => row.toggleSelected(!!value),
-        ariaLabel: 'Select row',
-        class: 'translate-y-0.5',
-      }),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: 'orderNumber',
+    id: 'orderInfo',
     header: ({ column }) =>
-      h(DataTableColumnHeader, { column, title: 'Order #' }),
-    cell: ({ row }) =>
-      h('div', { class: 'font-medium' }, row.getValue('orderNumber')),
-  },
-  {
-    accessorKey: 'orderDate',
-    header: ({ column }) =>
-      h(DataTableColumnHeader, { column, title: 'Date' }),
+      h(DataTableColumnHeader, { column, title: 'Order Info' }),
     cell: ({ row }) => {
-      const rawDate = row.getValue<string>('orderDate')
-      const formatted = new Date(rawDate).toLocaleDateString('id-ID', {
+      const orderNumber = row.original.orderNumber
+      const orderDate = row.original.orderDate
+
+      const formattedDate = new Date(orderDate).toLocaleDateString('id-ID', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
       })
-      return h('div', {}, formatted)
+      return h('div', { class: 'flex flex-col gap-1' }, [
+        h('div', { class: 'font-medium text-sm' }, orderNumber),
+        h('div', { class: 'text-xs text-muted-foreground' }, formattedDate),
+      ])
     },
   },
+  {
+    id: 'productInfo',
+    header: ({ column }) =>
+      h(DataTableColumnHeader, { column, title: 'Product Info' }),
+    cell: ({ row }) => {
+      const items = row.original.items || []
+
+      return h('div', { class: 'flex flex-col gap-2' },
+        items.map(item =>
+          h('div', { class: 'flex flex-col text-sm text-muted-foreground' }, [
+            h('div', { class: 'font-medium' }, item.product?.product_code || '-'),
+            h('div', {}, item.product?.name || '-')
+          ])
+        )
+      )
+    },
+  },
+
   {
     accessorKey: 'customer.name',
     header: ({ column }) =>
@@ -100,10 +95,10 @@ export const columns: ColumnDef<Order>[] = [
         }
         return Math.abs(hash)
       }
-      
+
       const colorIndex = hashCode(customer.name || '') % colors.length
       const avatarColor = colors[colorIndex]
-      
+
       return h('div', { class: 'flex items-center gap-3' }, [
         // Custom avatar bulat dengan background berwarna
         customer.avatar 
@@ -121,6 +116,26 @@ export const columns: ColumnDef<Order>[] = [
           customer.npwp && h('div', { class: 'text-xs text-muted-foreground truncate' }, `NPWP: ${customer.npwp}`)
         ])
       ])
+    },
+  },
+  {
+    id: 'quantity',
+    header: ({ column }) =>
+      h(DataTableColumnHeader, { column, title: 'Qty' }),
+    cell: ({ row }) => {
+      const items = row.original.items || []
+
+      if (!items.length) {
+        return h('div', { class: 'text-muted-foreground text-sm' }, '-')
+      }
+
+      return h(
+        'ul',
+        { class: 'list-disc list-inside space-y-0.5 text-sm' },
+        items.map(item =>
+          h('li', {}, `${item.quantity}`)
+        )
+      )
     },
   },
   {

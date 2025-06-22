@@ -26,9 +26,8 @@ import { useCustomers } from '@/composables/useCustomers'
 import { useAuth } from '@/composables/useAuth'
 
 // Initialize composables
-const { getCurrentCustomer, updateCustomer, isAuthenticated } = useCustomers()
+const { updateCustomer, isAuthenticated } = useCustomers()
 const { user } = useAuth()
-
 // Form state management
 const profileData = ref({
   npwp: '',
@@ -160,41 +159,50 @@ watch(() => profileData.value.province, (newProvince) => {
   }
 })
 
-// Load current customer data
-const loadCurrentCustomer = async () => {
-  if (!isAuthenticated.value)
+// Load data from auth user
+const loadUserData = () => {
+  if (!user.value) {
+    console.warn('No user data available')
     return
-  loadingCustomer.value = true
-  try {
-    const customerData = await getCurrentCustomer()
-    if (customerData?.data) {
-      const customer = customerData.data
-      // Find default address
-      const defaultAddress = customer.addresses?.find(addr => addr.is_default) || {}
+  }
 
-      profileData.value = {
-        npwp: customer.npwp || '',
-        companyName: customer.company_name || customer.name || '',
-        phone: defaultAddress.phone || customer.phone || '',
-        email: customer.email || '',
-        province: defaultAddress.province || customer.province || '',
-        city: defaultAddress.city || customer.city || '',
-        postalCode: defaultAddress.postalcode || customer.postal_code || '',
-      }
-    }
+  console.log('Loading user data:', user.value)
+  
+  // Get profile data
+  const profile = user.value.profile
+  
+  // Get default address from addresses array
+  const defaultAddress = profile?.addresses?.find(addr => addr.is_default) || profile?.addresses?.[0] || {}
+  
+  // Populate form with user data
+  profileData.value = {
+    npwp: profile?.npwp || '',
+    companyName: profile?.name || '',
+    phone: defaultAddress?.phone || profile?.phone || '',
+    email: profile?.email || user.value.email || '',
+    province: defaultAddress?.province || profile?.province || '',
+    city: defaultAddress?.city || profile?.city || '',
+    postalCode: defaultAddress?.postalcode || profile?.postalcode || '',
   }
-  catch (error) {
-    console.error('Failed to load customer data:', error)
-  }
-  finally {
+  
+  console.log('Populated profile data:', profileData.value)
+}
+
+// Refresh data from auth
+const refreshUserData = () => {
+  loadingCustomer.value = true
+  
+  // Simulate loading delay
+  setTimeout(() => {
+    loadUserData()
     loadingCustomer.value = false
-  }
+  }, 1000)
 }
 
 // Form submission with updateCustomer
 const handleSubmit = async () => {
   // Check authentication
-  if (!isAuthenticated.value) {
+  if (!isAuthenticated.value || !user.value) {
     console.warn('User not authenticated')
     return
   }
@@ -222,7 +230,7 @@ const handleSubmit = async () => {
     }
 
     // Get current user ID from auth store
-    const userId = user.value?.id
+    const userId = user.value?.id || user.value?.profile?.id
     if (!userId) {
       throw new Error('User ID not found')
     }
@@ -246,13 +254,23 @@ const handleSubmit = async () => {
   }
 }
 
-// Load customer data on component mount, but only if authenticated
+// Load user data on component mount
 onMounted(() => {
   console.log('Component mounted, checking authentication:', isAuthenticated.value)
-  if (isAuthenticated.value) {
-    loadCurrentCustomer()
+  console.log('User data:', user.value)
+  
+  if (isAuthenticated.value && user.value) {
+    loadUserData()
   }
 })
+
+// Watch for user data changes
+watch(user, (newUser) => {
+  if (newUser) {
+    console.log('User data changed, reloading profile data')
+    loadUserData()
+  }
+}, { immediate: true })
 
 // Form validation status
 const isValid = computed(() => {
@@ -295,8 +313,8 @@ const getFieldStatus = (field) => {
             </Badge>
           </div>
           <div class="flex-1">
-            <h3 class="text-xl font-semibold text-gray-900">{{ profileData.companyName }}</h3>
-            <p class="text-sm text-gray-600">NPWP: {{ profileData.npwp }}</p>
+            <h3 class="text-xl font-semibold text-gray-900">{{ profileData.companyName || 'Nama Perusahaan' }}</h3>
+            <p class="text-sm text-gray-600">NPWP: {{ profileData.npwp || 'Belum diisi' }}</p>
             <Badge
               :variant="isValid ? 'default' : 'secondary'"
               class="mt-2 text-xs"
@@ -320,7 +338,7 @@ const getFieldStatus = (field) => {
             </CardDescription>
           </div>
           <Button
-            @click="loadCurrentCustomer"
+            @click="refreshUserData"
             :disabled="loadingCustomer"
             variant="outline"
             size="sm"

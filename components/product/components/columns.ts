@@ -1,7 +1,7 @@
 // columns.ts
-import type { Product } from '@/types/schema'
-import { Badge } from '@/components/ui/badge'
+import type { Product } from '../data/schema'
 import type { ColumnDef } from '@tanstack/vue-table'
+import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { h } from 'vue'
 import DataTableColumnHeader from './DataTableColumnHeader.vue'
@@ -9,42 +9,89 @@ import DataTableRowActions from './DataTableRowActions.vue'
 
 export const columns = (onDeleteSuccess: () => void): ColumnDef<Product>[] => [
   {
-    id: 'select',
-    header: ({ table }) =>
-      h(Checkbox, {
-        checked: table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate'),
-        'onUpdate:checked': value => table.toggleAllPageRowsSelected(!!value),
-        'ariaLabel': 'Select all',
-        class: 'translate-y-0.5',
-      }),
-    cell: ({ row }) =>
-      h(Checkbox, {
-        checked: row.getIsSelected(),
-        'onUpdate:checked': value => row.toggleSelected(!!value),
-        'ariaLabel': 'Select row',
-        class: 'translate-y-0.5',
-      }),
-    enableSorting: false,
-    enableHiding: false,
+    id: 'product_info',
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Product Information' }),
+    cell: ({ row }) => {
+      const product = row.original
+      const productCode = product.product_code || '-'
+      const name = product.name || '-'
+      const description = product.description || '-'
+      return h('div', { class: 'space-y-1 max-w-[400px]' }, [
+        // Product Code
+        h('div', { class: 'flex items-center gap-2' }, [
+          h('span', { class: 'text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-600' }, productCode),
+        ]),
+        // Product Name
+        h('div', { class: 'font-medium text-sm' }, name),
+        // Description
+        h('div', { class: 'text-xs text-gray-500 truncate' }, description),
+      ])
+    },
+    // Enable sorting by product name
+    sortingFn: (rowA, rowB) => {
+      const nameA = rowA.original.name || ''
+      const nameB = rowB.original.name || ''
+      return nameA.localeCompare(nameB)
+    },
   },
   {
-    accessorKey: 'id',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'ID' }),
-    cell: ({ row }) => h('div', { class: 'w-20' }, row.getValue('id')),
+    id: 'supplier',
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Supplier' }),
+    cell: ({ row }) => {
+      const product = row.original
+      console.log('supplier = ',product.supplier)
+      const supplierCode = product.supplier?.supplier_code || '-'
+      const supplierName = product.supplier?.name || '-'
+      
+      return h('div', { class: 'space-y-1' }, [
+        // Supplier Code
+        h('div', { class: 'flex items-center gap-2' }, [
+          h('span', { class: 'text-xs font-mono bg-blue-100 px-2 py-1 rounded text-blue-600' }, supplierCode),
+        ]),
+        // Supplier Name
+        h('div', { class: 'text-sm font-medium' }, supplierName),
+      ])
+    },
   },
   {
-    accessorKey: 'name',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Product Name' }),
-    cell: ({ row }) => h('span', { class: 'font-medium' }, row.getValue('name')),
+    id: 'dpp_beli',
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'DPP Beli' }),
+    cell: ({ row }) => {
+      const product = row.original
+      const price = parseFloat(product.prices?.[0]?.dpp_beli || '0').toLocaleString('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+      })
+      return h('span', price)
+    },
+    // Enable sorting by DPP beli
+    sortingFn: (rowA, rowB) => {
+      const priceA = parseFloat(rowA.original.prices?.[0]?.dpp_beli || '0')
+      const priceB = parseFloat(rowB.original.prices?.[0]?.dpp_beli || '0')
+      return priceA - priceB
+    },
   },
   {
-    accessorKey: 'description',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Description' }),
-    cell: ({ row }) => h('div', { class: 'truncate max-w-[400px]' }, row.getValue('description')),
+    id: 'dpp_jual',
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'DPP Jual' }),
+    cell: ({ row }) => {
+      const product = row.original
+      const price = parseFloat(product.prices?.[0]?.dpp_jual || '0').toLocaleString('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+      })
+      return h('span', price)
+    },
+    // Enable sorting by DPP jual
+    sortingFn: (rowA, rowB) => {
+      const priceA = parseFloat(rowA.original.prices?.[0]?.dpp_jual || '0')
+      const priceB = parseFloat(rowB.original.prices?.[0]?.dpp_jual || '0')
+      return priceA - priceB
+    },
   },
   {
-    id: 'price',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Price' }),
+    id: 'harga_jual',
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Harga Jual' }),
     cell: ({ row }) => {
       const product = row.original
       const price = parseFloat(product.prices?.[0]?.h_jual_b || '0').toLocaleString('id-ID', {
@@ -53,20 +100,17 @@ export const columns = (onDeleteSuccess: () => void): ColumnDef<Product>[] => [
       })
       return h('span', price)
     },
+    // Enable sorting by harga jual
+    sortingFn: (rowA, rowB) => {
+      const priceA = parseFloat(rowA.original.prices?.[0]?.h_jual_b || '0')
+      const priceB = parseFloat(rowB.original.prices?.[0]?.h_jual_b || '0')
+      return priceA - priceB
+    },
   },
   {
     accessorKey: 'stock',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Stock' }),
     cell: ({ row }) => h('span', {}, row.getValue('stock')),
-  },
-  {
-    id: 'supplier',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Supplier' }),
-    cell: ({ row }) => {
-      const product = row.original
-      const supplierName = product.supplier?.name || '-'
-      return h('span', supplierName)
-    },
   },
   {
     accessorKey: 'is_bundle',

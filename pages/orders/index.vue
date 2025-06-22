@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { columns } from '@/components/sales-order/components/columns'
-import DataTable from '@/components/sales-order/components/DataTable.vue'
+import { columns } from '@/components/orders/components/columns'
+import DataTable from '@/components/orders/components/DataTable.vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useSalesOrder } from '@/composables/useSalesOrder'
@@ -21,7 +21,7 @@ onMounted(() => {
 })
 
 const goToCreate = () => {
-  router.push('/sales-order/create')
+  router.push('/orders/create')
 }
 
 // Computed untuk status statistics

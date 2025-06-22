@@ -1,16 +1,45 @@
 <script setup lang="ts">
 import type { Row } from '@tanstack/vue-table'
-import type { Customer } from '../data/schema'
-import { computed } from 'vue'
-import { customerSchema } from '../data/schema'
+import type { Product } from '@/types/schema'
+import { ref, computed } from 'vue'
+import { useToast } from '@/components/ui/toast'
+import { useRouter } from 'vue-router'
+import { useCustomers } from '@/composables/useCustomers'
 
-interface DataTableRowActionsProps {
-  row: Row<Customer>
+const props = defineProps<{ row: Row<Product> }>()
+const emit = defineEmits(['deleteSuccess'])
+
+const router = useRouter()
+const { toast } = useToast()
+const { deleteCustomer } = useCustomers()
+
+const showDeleteDialog = ref(false)
+const isDeleting = ref(false)
+const customer = computed(() => props.row.original)
+
+const handleDelete = async () => {
+  try {
+    isDeleting.value = true
+    await deleteCustomer(customer.value.id)
+    toast({
+      title: 'Customer dihapus',
+      description: `Customer "${customer.value.name}" berhasil dihapus.`,
+      variant: 'success',
+    })
+    showDeleteDialog.value = false
+    emit('deleteSuccess', customer.value.id)
+  }
+  catch (err: any) {
+    toast({
+      title: 'Gagal menghapus',
+      description: err?.message || 'Terjadi kesalahan saat menghapus produk.',
+      variant: 'destructive',
+    })
+  }
+  finally {
+    isDeleting.value = false
+  }
 }
-
-const props = defineProps<DataTableRowActionsProps>()
-
-const customer = computed(() => customerSchema.parse(props.row.original))
 </script>
 
 <template>
@@ -25,8 +54,7 @@ const customer = computed(() => customerSchema.parse(props.row.original))
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" class="w-[160px]">
-      <DropdownMenuItem>Edit</DropdownMenuItem>
-      <DropdownMenuItem>
+      <DropdownMenuItem @click="handleDelete">
         Delete
         <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
       </DropdownMenuItem>
