@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
-import { useAuth } from '@/composables/useAuth' // Import useAuth instead of useCustomers
-import { useAuthStore } from '~/stores/auth' // Import auth store directly
+import { useAuth } from '@/composables/useAuth'
+import { useAddress } from '@/composables/useAddress' // Import the useAddress composable
+import { useAuthStore } from '~/stores/auth'
 import { 
   Edit2, 
   Trash2, 
@@ -22,44 +23,30 @@ import {
 } from 'lucide-vue-next'
 import { onMounted, ref, computed } from 'vue'
 
-const { user } = useAuth() // Use useAuth composable
-const authStore = useAuthStore() // Use auth store for fetchProfile
+const { user } = useAuth()
+const authStore = useAuthStore()
 const { toast } = useToast()
 
-const addresses = ref<any[]>([])
-const loading = ref(true)
+// Use the useAddress composable
+const { 
+  addresses, 
+  loading, 
+  defaultAddress,
+  otherAddresses,
+  fetchUserAddresses, 
+  setDefaultAddress, 
+  deleteAddress 
+} = useAddress()
+
 const showAddressForm = ref(false)
 const showConfirmModal = ref(false)
 const showDeleteModal = ref(false)
 const selectedAddressId = ref<number | null>(null)
 const deleteLoading = ref(false)
 
-const defaultAddress = computed(() => addresses.value.find(addr => addr.isDefault))
-const otherAddresses = computed(() => addresses.value.filter(addr => !addr.isDefault))
-
-const fetchUserAddresses = async () => {
+const handleFetchAddresses = async () => {
   try {
-    // Refresh user data to get latest addresses using auth store
-    await authStore.fetchProfile()
-    
-    if (user.value?.profile?.addresses) {
-      addresses.value = user.value.profile.addresses.map((addr: any) => ({
-        id: addr.id,
-        label: addr.name, // Using name as label since there's no separate label field
-        name: addr.name,
-        phone: addr.phone,
-        email: user.value?.email || '', // Use user email as address email
-        address: addr.address,
-        city: addr.city,
-        province: addr.province,
-        postalCode: addr.postalcode,
-        isDefault: addr.is_default,
-        isDeleted: addr.is_deleted,
-        createdAt: addr.created_at,
-      })).filter((addr: any) => !addr.isDeleted) // Filter out deleted addresses
-    } else {
-      addresses.value = []
-    }
+    await fetchUserAddresses()
   }
   catch (error) {
     console.error('Gagal mengambil alamat:', error)
@@ -85,16 +72,8 @@ async function confirmSetDefault() {
   if (selectedAddressId.value === null) return
 
   try {
-    // API call to set default address
-    await $fetch(`/addresses/${selectedAddressId.value}/set-default`, {
-      method: 'PATCH',
-      baseURL: useRuntimeConfig().public.apiBase,
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-      },
-    })
-
-    await fetchUserAddresses()
+    await setDefaultAddress(selectedAddressId.value)
+    await handleFetchAddresses()
 
     toast({
       title: 'Berhasil!',
@@ -121,16 +100,8 @@ async function confirmDelete() {
 
   deleteLoading.value = true
   try {
-    // API call to delete address
-    await $fetch(`/addresses/${selectedAddressId.value}`, {
-      method: 'DELETE',
-      baseURL: useRuntimeConfig().public.apiBase,
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-      },
-    })
-
-    await fetchUserAddresses()
+    await deleteAddress(selectedAddressId.value)
+    await handleFetchAddresses()
 
     toast({
       title: 'Berhasil!',
@@ -154,9 +125,7 @@ async function confirmDelete() {
 }
 
 onMounted(async () => {
-  loading.value = true
-  await fetchUserAddresses()
-  loading.value = false
+  await handleFetchAddresses()
 })
 </script>
 
@@ -179,6 +148,7 @@ onMounted(async () => {
         Tambah Alamat Baru
       </Button>
     </div>
+    
     <!-- Loading State -->
     <div v-if="loading" class="space-y-4">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -246,14 +216,14 @@ onMounted(async () => {
                     </div>
                     <div class="flex items-center gap-3 text-sm">
                       <Mail class="w-4 h-4 text-gray-500" />
-                      <span>{{ defaultAddress.email }}</span>
+                      <span>{{ defaultAddress.email || user?.email }}</span>
                     </div>
                   </div>
                   <div class="flex items-start gap-3 text-sm">
                     <MapPin class="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
                     <div class="leading-relaxed">
                       <p class="font-medium">{{ defaultAddress.address }}</p>
-                      <p class="text-gray-600">{{ defaultAddress.city }}, {{ defaultAddress.province }} {{ defaultAddress.postalCode }}</p>
+                      <p class="text-gray-600">{{ defaultAddress.city }}, {{ defaultAddress.province }} {{ defaultAddress.postalcode }}</p>
                     </div>
                   </div>
                 </div>
@@ -304,13 +274,13 @@ onMounted(async () => {
                   </div>
                   <div class="flex items-center gap-3">
                     <Mail class="w-4 h-4 text-gray-500" />
-                    <span>{{ address.email }}</span>
+                    <span>{{ address.email || user?.email }}</span>
                   </div>
                   <div class="flex items-start gap-3">
                     <MapPin class="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
                     <div class="leading-relaxed">
                       <p class="font-medium">{{ address.address }}</p>
-                      <p class="text-gray-600">{{ address.city }}, {{ address.province }} {{ address.postalCode }}</p>
+                      <p class="text-gray-600">{{ address.city }}, {{ address.province }} {{ address.postalcode }}</p>
                     </div>
                   </div>
                 </div>
@@ -392,7 +362,7 @@ onMounted(async () => {
       :open="showAddressForm" 
       @close="() => {
         showAddressForm = false
-        fetchUserAddresses()
+        handleFetchAddresses()
       }"
     />
   </div>

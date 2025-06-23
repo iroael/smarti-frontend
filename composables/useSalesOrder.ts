@@ -117,7 +117,7 @@ export function useSalesOrder() {
           return null
         }
         return parsed.data
-      }
+      },
     })
 
     if (fetchError.value) {
@@ -128,24 +128,40 @@ export function useSalesOrder() {
     return data.value ?? null
   }
 
-  const createSalesOrder = async (payload: Omit<Order, 'id' | 'orderNumber' | 'orderDate'>): Promise<Order | null> => {
+  const createSalesOrder = async (
+    payload: {
+      customerId: number
+      notes?: string
+      deliveryAddress?: string | number
+      items: {
+        productId: number
+        quantity: number
+      }[]
+    },
+  ): Promise<(Order & { snapToken?: string }) | null> => {
     const { data, error: fetchError } = await useFetch(`${config.public.apiBase}/orders`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: payload,
+      body: {
+        ...payload,
+        deliveryAddress: payload.deliveryAddress, // pastikan string
+      },
       transform: (rawData) => {
+        if (!rawData || !rawData.order) {
+          console.error('Invalid response from server. No order object returned.')
+          return null
+        }
         const parsed = orderSchema.safeParse(rawData.order)
         if (!parsed.success) {
           console.error('Failed to parse created order:', parsed.error)
           return null
         }
-
         return {
           ...parsed.data,
-          snapToken: rawData.snapToken // ambil snapToken kalau ada
+          snapToken: rawData.snapToken ?? null,
         }
       },
     })
@@ -157,6 +173,7 @@ export function useSalesOrder() {
 
     return data.value ?? null
   }
+
 
   const updateSalesOrder = async (id: number, payload: Partial<Order>): Promise<Order | null> => {
     const { data, error: fetchError } = await useFetch(`${config.public.apiBase}/orders/${id}`, {

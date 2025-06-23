@@ -27,38 +27,74 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
-import { useCustomers } from '@/composables/useCustomers'
+import { useAddress } from '@/composables/useAddress'
 import { useProducts } from '@/composables/useProducts'
 import { useSalesOrder } from '@/composables/useSalesOrder'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
+import { useAuthStore } from '~/stores/auth'
 
+const authStore = useAuthStore()
 const { createSalesOrder } = useSalesOrder()
-const { getCurrentCustomer } = useCustomers()
-const { fetchBundleProducts, bundleProducts } = useProducts()
+const { fetchUserAddresses, addresses, defaultAddress } = useAddress()
+const { fetchProductsByRole, bundleProducts } = useProducts()
 
 const currentCustomer = ref(null)
 const customerId = ref<number | null>(null)
 
 const fetchCurrentCustomer = async () => {
   try {
-    const response = await getCurrentCustomer()
-    currentCustomer.value = response
+    // Refresh profile data
+    await authStore.fetchProfile()
+    
+    const user = authStore.user
+    currentCustomer.value = user
 
-    const data = response?.data ?? response
+    // Access customer data from user.profile or user directly
+    const customerData = user?.profile || user
+    
+    customerName.value = customerData?.name || ''
+    customerId.value = customerData?.id || null
 
-    customerName.value = data.name || ''
-    customerId.value = data.id || null
+    // Check if addresses exist in the user data
+    const userAddresses = customerData?.addresses || []
+    
+    if (Array.isArray(userAddresses) && userAddresses.length > 0) {
+      customerAddresses.value = userAddresses
 
-    if (Array.isArray(data.addresses)) {
-      customerAddresses.value = data.addresses
+      // Find default address first
+      const defaultAddress = customerAddresses.value.find(addr => addr.is_default)
+      
+      if (defaultAddress) {
+        selectedAddressId.value = defaultAddress.id
+        console.log('✅ Default address selected:', defaultAddress.id, defaultAddress.name)
+      } else {
+        selectedAddressId.value = customerAddresses.value[0].id
+        console.log('⚠️ No default address, using first:', customerAddresses.value[0].id)
+      }
+    } else {
+      // If no addresses in profile, fetch them separately
+      console.log('📡 Fetching addresses separately...')
+      await fetchUserAddresses()
+      customerAddresses.value = addresses.value
 
       const defaultAddress = customerAddresses.value.find(addr => addr.is_default)
-      selectedAddressId.value = defaultAddress?.id ?? customerAddresses.value[0]?.id
+      if (defaultAddress) {
+        selectedAddressId.value = defaultAddress.id
+        console.log('✅ Default address selected from separate fetch:', defaultAddress.id, defaultAddress.name)
+      } else if (customerAddresses.value.length > 0) {
+        selectedAddressId.value = customerAddresses.value[0].id
+        console.log('⚠️ No default address, using first from separate fetch')
+      } else {
+        selectedAddressId.value = null
+        console.log('❌ No addresses available')
+      }
     }
-    else {
-      customerAddresses.value = []
-    }
+
+    console.log('Customer data:', customerData)
+    console.log('Customer addresses:', customerAddresses.value)
+    console.log('Selected address ID:', selectedAddressId.value)
+    
   } catch (err) {
     console.error('Failed to fetch current customer:', err)
     toast.error('Gagal mengambil data customer')
@@ -103,16 +139,17 @@ const validateForm = () => {
       errors.value[`stock_${item.productId}`] = `Stok tidak cukup. Tersedia: ${product.stock}`
     }
   }
-  
+
   return Object.keys(errors.value).length === 0
 }
 
 // Item management functions
-const toggleItem = (productId: number, checked: boolean) => {
+const toggleItem = (productId: number, checked: boolean) => { 
   const idx = selectedItems.value.findIndex(i => i.productId === productId)
   if (checked && idx === -1) {
     selectedItems.value.push({ productId, quantity: 1 })
-  } else if (!checked && idx !== -1) {
+  }
+  else if (!checked && idx !== -1) {
     selectedItems.value.splice(idx, 1)
   }
   // Clear stock error when item is toggled
@@ -122,11 +159,10 @@ const toggleItem = (productId: number, checked: boolean) => {
 const updateQuantity = (productId: number, value: number) => {
   const item = selectedItems.value.find(i => i.productId === productId)
   const product = bundleProducts.value.find(p => p.id === productId)
-  
   if (item && product) {
     const maxQuantity = Math.min(value, product.stock)
     item.quantity = Math.max(1, maxQuantity)
-    
+
     // Clear stock error if quantity is valid
     if (item.quantity <= product.stock) {
       delete errors.value[`stock_${productId}`]
@@ -135,20 +171,30 @@ const updateQuantity = (productId: number, value: number) => {
 }
 
 // Helper functions
-const isChecked = (productId: number) =>
-  selectedItems.value.some(i => i.productId === productId)
+const isChecked = (productId: number) => selectedItems.value.some(i => i.productId === productId)
 
-const getQuantity = (productId: number) =>
-  selectedItems.value.find(i => i.productId === productId)?.quantity || 1
+const getQuantity = (productId: number) => selectedItems.value.find(i => i.productId === productId)?.quantity || 1
 
 const getProductPrice = (productId: number): number => {
   const product = bundleProducts.value.find(p => p.id === productId)
-  return parseFloat(product?.prices?.[0]?.h_jual_b || '0')
+  const price = parseFloat(product?.prices?.[0]?.h_jual_b || '0')
+  
+  // Add debugging logs
+  console.log(`🔍 Product ID ${productId}:`, {
+    product: product,
+    priceObject: product?.prices?.[0],
+    h_jual_b: product?.prices?.[0]?.h_jual_b,
+    parsedPrice: price
+  })
+  
+  return price
 }
 
 const getStockStatus = (stock: number) => {
-  if (stock === 0) return { label: 'Habis', variant: 'destructive' }
-  if (stock <= 5) return { label: 'Terbatas', variant: 'warning' }
+  if (stock === 0)
+    return { label: 'Habis', variant: 'destructive' }
+  if (stock <= 5)
+    return { label: 'Terbatas', variant: 'warning' }
   return { label: 'Tersedia', variant: 'success' }
 }
 
@@ -158,18 +204,17 @@ const getSelectedAddress = () => {
 
 // Address change handler - Multiple approaches
 const handleAddressChange = (value: any) => {
-  console.log('Raw value received:', value, typeof value)
-  
   let numValue: number
   if (typeof value === 'string') {
-    numValue = parseInt(value, 10)
-  } else if (typeof value === 'number') {
+    numValue = Number.parseInt(value, 10)
+  }
+  else if (typeof value === 'number') {
     numValue = value
-  } else {
+  }
+  else {
     console.error('Unexpected value type:', typeof value, value)
     return
   }
-  console.log('Converted to number:', numValue)
   selectedAddressId.value = numValue
 
   // Force reactivity update
@@ -180,20 +225,38 @@ const handleAddressChange = (value: any) => {
 }
 
 // Computed values for pricing
-const subtotal = computed(() =>
-  selectedItems.value.reduce((sum, item) => {
+const subtotal = computed(() => {
+  console.log('🧮 Calculating subtotal...')
+  
+  const result = selectedItems.value.reduce((sum, item) => {
     const price = getProductPrice(item.productId)
-    return sum + price * item.quantity
-  }, 0),
-)
+    const itemTotal = price * item.quantity
+    
+    console.log(`📦 Item ${item.productId}: price=${price}, qty=${item.quantity}, total=${itemTotal}`)
+    
+    return sum + itemTotal
+  }, 0)
+  
+  console.log('💰 Final subtotal:', result)
+  return result
+})
+
 
 const ppnAmount = computed(() => 
   includePPN.value ? subtotal.value * PPN_RATE : 0,
 )
 
-const total = computed(() => 
-  subtotal.value + ppnAmount.value,
-)
+const total = computed(() => {
+  const calculatedTotal = subtotal.value + ppnAmount.value
+  console.log('📊 Total calculation:', {
+    subtotal: subtotal.value,
+    ppnAmount: ppnAmount.value,
+    total: calculatedTotal,
+    includePPN: includePPN.value
+  })
+  
+  return calculatedTotal
+})
 
 const selectedItemsCount = computed(() => selectedItems.value.length)
 
@@ -220,20 +283,35 @@ const submit = async () => {
     return
   }
 
+   // Debug data sebelum submit
+  console.log('🚀 Submitting order with data:', {
+    customerId: customerId.value,
+    customerName: customerName.value,
+    deliveryAddress: selectedAddressId.value,
+    notes: notes.value,
+    includePPN: includePPN.value,
+    subtotal: subtotal.value,
+    ppnAmount: ppnAmount.value,
+    total: total.value,
+    items: selectedItems.value,
+    // Debug each item price calculation
+    itemsWithPrices: selectedItems.value.map(item => ({
+      ...item,
+      unitPrice: getProductPrice(item.productId),
+      totalPrice: getProductPrice(item.productId) * item.quantity
+    }))
+  })
+
   loading.value = true
   try {
     const response = await createSalesOrder({
       customerId: customerId.value, // Include customer ID
-      customerName: customerName.value,
-      selectedAddressId: selectedAddressId.value,
-      deliveryAddress: getSelectedAddress(),
+      deliveryAddress: selectedAddressId.value,
       notes: notes.value,
-      includePPN: includePPN.value,
-      subtotal: subtotal.value,
-      ppnAmount: ppnAmount.value,
-      total: total.value,
       items: selectedItems.value
     })
+
+    console.log(response)
 
     toast.success('Sales Order berhasil dibuat')
 
@@ -241,30 +319,70 @@ const submit = async () => {
     if (response?.snapToken) {
       window.snap.pay(response.snapToken, {
         onSuccess: function(result) {
-          console.log('Pembayaran sukses:', result)
           toast.success('Pembayaran berhasil!')
         },
         onPending: function(result) {
-          console.log('Pembayaran pending:', result)
           toast('Pembayaran masih pending.')
         },
         onError: function(result) {
-          console.error('Pembayaran error:', result)
           toast.error('Pembayaran gagal.')
         },
       })
     }
 
     resetForm()
-    fetchBundleProducts() // Refresh data setelah submit
-  } catch (err: any) {
+    fetchProductsByRole() // Refresh data setelah submit
+  }
+  catch (err: any) {
     toast.error('Gagal membuat Sales Order', {
       description: err?.message || 'Terjadi kesalahan tak terduga'
     })
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
+
+// 5. Add watcher untuk debugging reaktivitas
+watch(bundleProducts, (newProducts) => {
+  console.log('📦 Bundle products updated:', newProducts)
+  if (newProducts && newProducts.length > 0) {
+    console.log('💲 First product price structure:', newProducts[0]?.prices)
+  }
+}, { deep: true })
+
+watch(selectedItems, (newItems) => {
+  console.log('🛒 Selected items changed:', newItems)
+  // Recalculate manually to check
+  const manualSubtotal = newItems.reduce((sum, item) => {
+    const price = getProductPrice(item.productId)
+    return sum + (price * item.quantity)
+  }, 0)
+  console.log('🧮 Manual subtotal calculation:', manualSubtotal)
+}, { deep: true })
+
+// 6. Debug function untuk dipanggil manual
+const debugPrices = () => {
+  console.log('=== PRICE DEBUG START ===')
+  console.log('Bundle products:', bundleProducts.value)
+  console.log('Selected items:', selectedItems.value)
+  
+  selectedItems.value.forEach(item => {
+    const product = bundleProducts.value.find(p => p.id === item.productId)
+    console.log(`Product ${item.productId}:`, {
+      product,
+      prices: product?.prices,
+      h_jual_b: product?.prices?.[0]?.h_jual_b,
+      quantity: item.quantity,
+      calculated: getProductPrice(item.productId) * item.quantity
+    })
+  })
+  
+  console.log('Current subtotal:', subtotal.value)
+  console.log('Current total:', total.value)
+  console.log('=== PRICE DEBUG END ===')
+}
+
 
 // Watch for form changes to clear general errors
 watch([customerName, selectedAddressId, selectedItems], () => {
@@ -275,14 +393,20 @@ watch([customerName, selectedAddressId, selectedItems], () => {
 
 // Debug watcher - Remove this after testing
 watch(selectedAddressId, (newVal, oldVal) => {
-  console.log('selectedAddressId changed from', oldVal, 'to', newVal)
-  console.log('Selected address:', getSelectedAddress())
 }, { immediate: true })
 
 // Initialize data on component mount
 onMounted(async () => {
-  await fetchCurrentCustomer()
-  await fetchBundleProducts()
+   // Make debug function available globally
+  window.debugPrices = debugPrices
+  try {
+    // Fetch current customer first
+    await fetchCurrentCustomer()
+    const result = await fetchProductsByRole()
+  }
+  catch (error) {
+    toast.error('Gagal memuat data produk')
+  }
 })
 </script>
 

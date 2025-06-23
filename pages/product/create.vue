@@ -21,7 +21,7 @@ const { suppliers, loading: suppliersLoading, fetchSuppliers } = useSuppliers()
 // Fetch data saat component dimount
 await Promise.all([
   fetchProductNonBundle(),
-  fetchSuppliers()
+  fetchSuppliers(),
 ])
 
 // Mendapatkan parameter dari URL

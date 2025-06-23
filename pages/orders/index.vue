@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { columns } from '@/components/orders/components/columns'
 import DataTable from '@/components/orders/components/DataTable.vue'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSalesOrder } from '@/composables/useSalesOrder'
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'

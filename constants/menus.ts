@@ -24,40 +24,22 @@ export const navMenu: NavMenu[] = [
         link: '/orders',
         roles: ['customer'],
       },
-      {
-        title: 'Proyek Saya',
-        icon: 'i-lucide-home',
-        link: '/projects',
-        roles: ['customer'],
-      },
-      {
-        title: 'Status Pemasangan',
-        icon: 'i-lucide-trending-up',
-        link: '/installation-status',
-        roles: ['customer'],
-      },
-      {
-        title: 'Laporan Evaluasi Hunian',
-        icon: 'i-lucide-file-text',
-        link: '/evaluation-reports',
-        roles: ['customer'],
-      },
-      {
-        title: 'Ajukan Pemasangan',
-        icon: 'i-lucide-folder-plus',
-        link: '/installation-request',
-        roles: ['customer'],
-      },
     ],
   },
   {
     heading: 'Supplier Dashboard',
     roles: ['supplier'],
     items: [
+      // {
+      //   title: 'Katalog Product',
+      //   icon: 'i-lucide-box',
+      //   link: '/product/catalog',
+      //   roles: ['supplier'],
+      // },
       {
-        title: 'Katalog Product',
-        icon: 'i-lucide-box',
-        link: '/product/catalog',
+        title: 'Profil Perusahaan',
+        icon: 'i-lucide-building',
+        link: '/account',
         roles: ['supplier'],
       },
       {
@@ -78,24 +60,18 @@ export const navMenu: NavMenu[] = [
         link: '/product/my',
         roles: ['supplier'],
       },
-      {
-        title: 'Status Pemasangan',
-        icon: 'i-lucide-trending-up',
-        link: '/supplier/installation-status',
-        roles: ['supplier'],
-      },
-      {
-        title: 'Laporan Evaluasi',
-        icon: 'i-lucide-file-text',
-        link: '/supplier/evaluation-reports',
-        roles: ['supplier'],
-      },
-      {
-        title: 'Profil Perusahaan',
-        icon: 'i-lucide-building',
-        link: '/account',
-        roles: ['supplier'],
-      },
+      // {
+      //   title: 'Status Pemasangan',
+      //   icon: 'i-lucide-trending-up',
+      //   link: '/supplier/installation-status',
+      //   roles: ['supplier'],
+      // },
+      // {
+      //   title: 'Laporan Evaluasi',
+      //   icon: 'i-lucide-file-text',
+      //   link: '/supplier/evaluation-reports',
+      //   roles: ['supplier'],
+      // },
     ],
   },
   {

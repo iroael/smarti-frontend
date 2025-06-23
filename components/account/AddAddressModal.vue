@@ -1,25 +1,23 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useToast } from '@/components/ui/toast'
-import { useCustomers } from '@/composables/useCustomers'
+import { useAddress } from '@/composables/useAddress' // Ganti dari useCustomers ke useAddress
 
 const emit = defineEmits<{ (e: 'close'): void }>()
 const props = defineProps<{ open: boolean }>()
 
-const customerId = ref<number | null>(null)
-
 const form = ref({
   name: '',
-  email: '',
   phone: '',
   address: '',
   city: '',
   province: '',
   postalcode: '',
+  is_default: false,
   is_deleted: false,
 })
 
-const { addCustomerAddress, getCurrentCustomer } = useCustomers()
+const { createAddress, getOwnerInfo } = useAddress() // Menggunakan useAddress composable
 const { toast } = useToast()
 
 // Reset form saat modal dibuka
@@ -29,23 +27,24 @@ watch(
     if (isOpen) {
       form.value = {
         name: '',
-        email: '',
         phone: '',
         address: '',
         city: '',
         province: '',
         postalcode: '',
+        is_default: false,
         is_deleted: false,
       }
 
+      // Debug: Cek owner info saat modal dibuka
       try {
-        const { data } = await getCurrentCustomer()
-        customerId.value = data.id
-      }
-      catch (error) {
+        const ownerInfo = getOwnerInfo()
+        console.log('[AddressForm] Modal dibuka - Owner info:', ownerInfo)
+      } catch (error) {
+        console.error('[AddressForm] Error getting owner info:', error)
         toast({
-          title: 'Gagal ambil data user',
-          description: 'Silakan coba lagi',
+          title: 'Error',
+          description: 'User tidak terautentikasi',
           variant: 'destructive',
         })
       }
@@ -53,10 +52,13 @@ watch(
   }
 )
 
-
 const handleSubmit = async () => {
   try {
-    await addCustomerAddress(customerId.value, form.value)
+    console.log('[AddressForm] Submitting form data:', form.value)
+    
+    // Panggil createAddress yang sudah ada debug console
+    await createAddress(form.value)
+    
     toast({
       title: 'Berhasil',
       description: 'Alamat berhasil ditambahkan.',
@@ -64,7 +66,7 @@ const handleSubmit = async () => {
     })
     emit('close')
   } catch (error) {
-    console.error('Gagal menambahkan alamat:', error)
+    console.error('[AddressForm] Gagal menambahkan alamat:', error)
     toast({
       title: 'Gagal',
       description: 'Tidak dapat menyimpan alamat.',
@@ -86,12 +88,23 @@ const handleSubmit = async () => {
 
       <div class="grid gap-4 py-4">
         <Input v-model="form.name" placeholder="Nama" />
-        <Input v-model="form.email" placeholder="Email" type="email" />
         <Input v-model="form.phone" placeholder="Telepon" />
         <Textarea v-model="form.address" placeholder="Alamat Lengkap" />
         <Input v-model="form.city" placeholder="Kota" />
         <Input v-model="form.province" placeholder="Provinsi" />
         <Input v-model="form.postalcode" placeholder="Kode Pos" />
+        
+        <div class="flex items-center space-x-2">
+          <input 
+            id="is_default" 
+            v-model="form.is_default" 
+            type="checkbox" 
+            class="rounded border-gray-300"
+          />
+          <label for="is_default" class="text-sm font-medium">
+            Jadikan alamat utama
+          </label>
+        </div>
       </div>
 
       <DialogFooter>

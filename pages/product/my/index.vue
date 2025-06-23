@@ -100,7 +100,9 @@ const emptyStateConfig = computed(() => {
     description: "You don't have permission to view this content."
   }
 })
-
+console.log('isSupplier',isSupplier.value)
+console.log('isCustomer',isCustomer.value)
+console.log('isAdmin',isAdmin.value)
 onMounted(async () => {
   try {
     // Use role-based fetching for all authenticated users
@@ -141,26 +143,6 @@ const toggleViewMode = () => {
           {{ pageDescription }}
         </p>
       </div>
-
-      <!-- Action Buttons -->
-      <div class="flex items-center gap-2">
-        <!-- Add Product Button - Only for Admin & Supplier -->
-        <NuxtLink v-if="isAdmin || isSupplier" to="/product/create">
-          <button class="bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2">
-            <span class="text-lg">+</span>
-            Add Product
-          </button>
-        </NuxtLink>
-
-        <!-- Optional: View Toggle for Supplier (future enhancement) -->
-        <!-- <button 
-          v-if="isSupplier" 
-          @click="toggleViewMode"
-          class="bg-gray-200 text-gray-700 text-sm px-3 py-2 rounded hover:bg-gray-300 transition-colors duration-200"
-        >
-          Toggle View
-        </button> -->
-      </div>
     </div>
 
     <!-- Loading State -->
@@ -182,7 +164,7 @@ const toggleViewMode = () => {
       />
 
       <!-- Cards View - Customer -->
-      <div 
+      <div
         v-else-if="viewMode === 'cards'"
         :class="`grid ${gridCols} gap-6`"
       >
@@ -201,31 +183,6 @@ const toggleViewMode = () => {
         <p class="text-sm">You don't have permission to view this content.</p>
       </div>
     </template>
-
-    <!-- Empty State -->
-    <div v-if="!loading && displayData.length === 0 && viewMode !== 'restricted'" class="text-center py-12 text-muted-foreground">
-      <div class="text-6xl mb-4">{{ emptyStateConfig.icon }}</div>
-      <p class="text-xl font-medium mb-2">{{ emptyStateConfig.title }}</p>
-      <p class="text-sm">{{ emptyStateConfig.description }}</p>
-      
-      <!-- CTA for Supplier -->
-      <div v-if="isSupplier" class="mt-6">
-        <NuxtLink to="/product/create">
-          <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200">
-            Create Your First Product
-          </button>
-        </NuxtLink>
-      </div>
-    </div>
-
-    <!-- Debug Info (remove in production) -->
-    <!-- <div v-if="process.env.NODE_ENV === 'development'" class="mt-8 p-4 bg-gray-100 rounded text-xs">
-      <p><strong>Debug Info:</strong></p>
-      <p>User Role: {{ authStore.user?.role }}</p>
-      <p>View Mode: {{ viewMode }}</p>
-      <p>Products Count: {{ displayData.length }}</p>
-      <p>Loading: {{ loading }}</p>
-    </div> -->
   </div>
 </template>
 

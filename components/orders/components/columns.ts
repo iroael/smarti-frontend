@@ -1,5 +1,4 @@
 import type { ColumnDef } from '@tanstack/vue-table'
-
 import type { Order } from '../data/schema'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -8,6 +7,7 @@ import { h } from 'vue'
 import { labels, priorities, statuses } from '../data/data'
 import DataTableColumnHeader from './DataTableColumnHeader.vue'
 import DataTableRowActions from './DataTableRowActions.vue'
+import { useAuthStore } from '@/stores/auth' // Import auth store
 
 export const columns: ColumnDef<Order>[] = [
   {
@@ -50,15 +50,38 @@ export const columns: ColumnDef<Order>[] = [
   },
 
   {
-    accessorKey: 'customer.name',
-    header: ({ column }) =>
-      h(DataTableColumnHeader, { column, title: 'Customer' }),
+    id: 'supplierOrCustomer',
+    header: ({ column }) => {
+      const authStore = useAuthStore()
+      const userRole = authStore.user?.role
+      
+      // Tentukan title berdasarkan role
+      let title = 'Partner'
+      if (userRole === 'customer') {
+        title = 'Supplier'
+      } else if (userRole === 'supplier') {
+        title = 'Supplier'
+      }
+      return h(DataTableColumnHeader, { column, title })
+    },
     cell: ({ row }) => {
-      const customer = row.original.customer
-      if (!customer) return h('div', {}, '-')
+      const authStore = useAuthStore()
+      const userRole = authStore.user?.role
+      let displayData = null
+      
+      // Logika untuk menentukan data yang ditampilkan
+      if (userRole === 'customer') {
+        // Jika user adalah customer, tampilkan supplier
+        displayData = row.original.supplier
+      } else if (userRole === 'supplier') {
+        // Jika user adalah supplier, tampilkan customer
+        displayData = row.original.customer || row.original.supplier
+      }
+      // Jika tidak ada data, tampilkan dash
+      if (!displayData) return h('div', {}, '-')
       
       // Generate initials for avatar fallback
-      const initials = customer.name
+      const initials = displayData.name
         ?.split(' ')
         .map(n => n.charAt(0))
         .join('')
@@ -96,25 +119,25 @@ export const columns: ColumnDef<Order>[] = [
         return Math.abs(hash)
       }
 
-      const colorIndex = hashCode(customer.name || '') % colors.length
+      const colorIndex = hashCode(displayData.name || '') % colors.length
       const avatarColor = colors[colorIndex]
 
       return h('div', { class: 'flex items-center gap-3' }, [
         // Custom avatar bulat dengan background berwarna
-        customer.avatar 
+        displayData.avatar 
           ? h(Avatar, { class: 'h-8 w-8' }, [
-              h(AvatarImage, { src: customer.avatar })
+              h(AvatarImage, { src: displayData.avatar })
             ])
           : h('div', { 
               class: 'h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium text-white',
               style: { backgroundColor: avatarColor }
             }, initials),
-        // Customer info
+        // Display info
         h('div', { class: 'flex flex-col min-w-0' }, [
-          h('div', { class: 'font-medium truncate' }, customer.name || '-'),
-          h('div', { class: 'text-xs text-muted-foreground truncate' }, customer.phone || '-'),
-          customer.npwp && h('div', { class: 'text-xs text-muted-foreground truncate' }, `NPWP: ${customer.npwp}`)
-        ])
+          h('div', { class: 'font-medium truncate' }, displayData.name || '-'),
+          h('div', { class: 'text-xs text-muted-foreground truncate' }, displayData.phone || displayData.email || '-'),
+          displayData.npwp && h('div', { class: 'text-xs text-muted-foreground truncate' }, `NPWP: ${displayData.npwp}`)
+        ]),
       ])
     },
   },
