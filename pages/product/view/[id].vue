@@ -240,7 +240,7 @@ const bundleStats = computed(() => {
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
               <Icon name="i-lucide-shopping-cart" class="w-6 h-6 mx-auto mb-2 text-blue-600" />
-              <p class="text-sm text-blue-600 font-medium">DPP Beli</p>
+              <p class="text-sm text-blue-600 font-medium">DPP Beli Vendor</p>
               <p class="text-xl font-bold text-blue-700">
                 {{ formatCurrency(product.prices?.[0]?.dpp_beli || 0) }}
               </p>
@@ -248,7 +248,7 @@ const bundleStats = computed(() => {
             
             <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
               <Icon name="i-lucide-tag" class="w-6 h-6 mx-auto mb-2 text-green-600" />
-              <p class="text-sm text-green-600 font-medium">DPP Jual</p>
+              <p class="text-sm text-green-600 font-medium">DPP Jual KSS</p>
               <p class="text-xl font-bold text-green-700">
                 {{ formatCurrency(product.prices?.[0]?.dpp_jual || 0) }}
               </p>
@@ -256,7 +256,7 @@ const bundleStats = computed(() => {
             
             <div class="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
               <Icon name="i-lucide-trending-up" class="w-6 h-6 mx-auto mb-2 text-purple-600" />
-              <p class="text-sm text-purple-600 font-medium">Harga Jual</p>
+              <p class="text-sm text-purple-600 font-medium">Harga Jual PLNE</p>
               <p class="text-xl font-bold text-purple-700">
                 {{ formatCurrency(product.prices?.[0]?.h_jual_b || 0) }}
               </p>
@@ -294,9 +294,9 @@ const bundleStats = computed(() => {
                   <th class="text-left py-3 px-4 font-semibold text-muted-foreground">Nama Produk</th>
                   <th class="text-left py-3 px-4 font-semibold text-muted-foreground">Kode</th>
                   <th class="text-center py-3 px-4 font-semibold text-muted-foreground">Qty</th>
-                  <th class="text-right py-3 px-4 font-semibold text-muted-foreground">DPP Beli</th>
-                  <th class="text-right py-3 px-4 font-semibold text-muted-foreground">DPP Jual</th>
-                  <th class="text-right py-3 px-4 font-semibold text-muted-foreground">Harga Jual</th>
+                  <th class="text-right py-3 px-4 font-semibold text-muted-foreground">DPP Beli Vendor</th>
+                  <th class="text-right py-3 px-4 font-semibold text-muted-foreground">DPP Jual KSS</th>
+                  <th class="text-right py-3 px-4 font-semibold text-muted-foreground">Harga Jual PLNE</th>
                   <th class="text-center py-3 px-4 font-semibold text-muted-foreground">Stok</th>
                   <!-- <th class="text-right py-3 px-4 font-semibold text-muted-foreground">Subtotal</th> -->
                 </tr>

@@ -12,16 +12,22 @@ export const navMenu: NavMenu[] = [
         link: '/account',
         roles: ['customer'],
       },
-      {
-        title: 'Product',
-        icon: 'i-lucide-box',
-        link: '/product',
-        roles: ['customer'],
-      },
+      // {
+      //   title: 'Product',
+      //   icon: 'i-lucide-box',
+      //   link: '/product',
+      //   roles: ['customer'],
+      // },
       {
         title: 'Pesanan Saya',
         icon: 'i-lucide-package',
         link: '/orders',
+        roles: ['customer'],
+      },
+      {
+        title: 'Faktur Saya',
+        icon: 'i-lucide-package',
+        link: '/faktur',
         roles: ['customer'],
       },
     ],

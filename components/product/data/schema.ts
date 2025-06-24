@@ -48,6 +48,7 @@ export const productSchema = z.object({
   description: z.string().nullable(),
   stock: z.number(),
   is_bundle: z.boolean(),
+  inventory_type: z.string(),
   created_at: z.string(),
   supplier: supplierSchema,
   prices: z.array(priceSchema),
