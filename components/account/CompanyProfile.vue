@@ -314,7 +314,6 @@ const getFieldStatus = (field) => {
           </div>
           <div class="flex-1">
             <h3 class="text-xl font-semibold text-gray-900">{{ profileData.companyName || 'Nama Perusahaan' }}</h3>
-            <p class="text-sm text-gray-600">NPWP: {{ profileData.npwp || 'Belum diisi' }}</p>
             <Badge
               :variant="isValid ? 'default' : 'secondary'"
               class="mt-2 text-xs"
@@ -360,33 +359,6 @@ const getFieldStatus = (field) => {
 
       <CardContent class="space-y-6 relative">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- NPWP -->
-          <div class="space-y-2">
-            <Label for="npwp" class="flex items-center gap-1 text-sm font-medium">
-              NPWP <span class="text-red-500">*</span>
-            </Label>
-            <div class="relative">
-              <Input
-                id="npwp"
-                :value="profileData.npwp"
-                @input="handleNPWPInput"
-                @blur="() => handleFieldBlur('npwp')"
-                placeholder="00.000.000.0-000.000"
-                class="h-12 pr-10"
-                :class="{
-                  'border-red-300 focus:border-red-500': getFieldStatus('npwp') === 'error',
-                  'border-green-300 focus:border-green-500': getFieldStatus('npwp') === 'success'
-                }"
-                maxlength="20"
-              />
-              <div v-if="getFieldStatus('npwp') !== 'default'" class="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <CheckCircle v-if="getFieldStatus('npwp') === 'success'" class="h-4 w-4 text-green-500" />
-                <AlertCircle v-else class="h-4 w-4 text-red-500" />
-              </div>
-            </div>
-            <p v-if="errors.npwp" class="text-xs text-red-600">{{ errors.npwp }}</p>
-          </div>
-
           <!-- Nama Perusahaan -->
           <div class="space-y-2">
             <Label for="company" class="flex items-center gap-1 text-sm font-medium">

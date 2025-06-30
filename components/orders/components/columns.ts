@@ -58,9 +58,9 @@ export const columns: ColumnDef<Order>[] = [
       // Tentukan title berdasarkan role
       let title = 'Partner'
       if (userRole === 'customer') {
-        title = 'Supplier'
+        title = 'Partner'
       } else if (userRole === 'supplier') {
-        title = 'Supplier'
+        title = 'Partner'
       }
       return h(DataTableColumnHeader, { column, title })
     },

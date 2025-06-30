@@ -13,9 +13,30 @@ interface DataTableRowActionsProps {
 }
 const props = defineProps<DataTableRowActionsProps>()
 
-const order = computed(() => orderSchema.parse(props.row.original))
+// ✅ PERBAIKAN: Gunakan safeParseOrder untuk handle missing fields
+const order = computed(() => {
+  const originalData = props.row.original
+  
+  // Coba parse dengan orderSchema dulu
+  const result = orderSchema.safeParse(originalData)
+  
+  if (result.success) {
+    return result.data
+  } else {
+    // Jika gagal, kembalikan data original untuk akses id
+    console.warn('Order validation failed, using original data:', result.error.issues)
+    return originalData
+  }
+})
+
 const goToDetail = () => {
-  router.push(`/orders/details/${order.value.id}`)
+  // Gunakan id dari data yang ada
+  const orderId = order.value.id
+  if (orderId) {
+    router.push(`/orders/details/${orderId}`)
+  } else {
+    console.error('No order ID found')
+  }
 }
 </script>
 

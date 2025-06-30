@@ -2,6 +2,7 @@
 import AccountSecurity from '@/components/account/AccountSecurity.vue'
 import AddressList from '@/components/account/AddressList.vue'
 import CompanyProfile from '@/components/account/CompanyProfile.vue'
+import TaxPage from '@/components/account/TaxPage.vue'
 import SidebarMenu from '@/components/account/SidebarMenu.vue'
 import { User, Eye, EyeOff } from 'lucide-vue-next'
 import { ref } from 'vue'
@@ -32,6 +33,7 @@ const activeTab = ref('profile')
     <div class="col-span-1 md:col-span-3 space-y-6">
       <CompanyProfile v-if="activeTab === 'profile'" />
       <AddressList v-if="activeTab === 'address'" />
+      <TaxPage v-if="activeTab === 'taxes'" />
       <AccountSecurity v-if="activeTab === 'security'" />
     </div>
   </div>

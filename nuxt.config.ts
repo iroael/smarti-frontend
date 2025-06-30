@@ -4,8 +4,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       // apiBase: 'http://103.158.130.3:10003', // Ganti sesuai server kamu
-      apiBase: 'http://localhost:10003', // Ganti sesuai server kamu
-      midtransClientKey: 'SB-Mid-client-Q--Pt3_jAV6r0W8r', // Tambahkan ini kalau mau akses di runtime
+      // apiBase: 'http://localhost:10003', // Ganti sesuai server kamu
+      apiBase: 'https://e124-103-189-116-14.ngrok-free.app',
+      midtransClientKey: 'SB-Mid-client-Q--Pt3_jAV6r0W8r1', // Tambahkan ini kalau mau akses di runtime
     },
   },
   modules: [

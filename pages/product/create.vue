@@ -5,6 +5,7 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
 import { useProducts } from '@/composables/useProducts'
 import { useSuppliers } from '@/composables/useSupplier'
+import { useProductTax } from '@/composables/useProductTax'
 import { toast } from 'vue-sonner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,11 +18,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const { createProduct, fetchProductNonBundle, nonBundleProducts } = useProducts()
 const { suppliers, loading: suppliersLoading, fetchSuppliers } = useSuppliers()
+const { taxes, loading: taxesLoading, fetchTaxes } = useProductTax()
 
 // Fetch data saat component dimount
 await Promise.all([
   fetchProductNonBundle(),
   fetchSuppliers(),
+  fetchTaxes()
 ])
 
 // Mendapatkan parameter dari URL
@@ -41,6 +44,7 @@ const schema = toTypedSchema(z.object({
   stock: z.number().min(0, 'Stok tidak boleh negatif'),
   is_bundle: z.boolean(),
   supplier_id: z.number().min(1, 'Supplier wajib dipilih'),
+  tax_id: z.number().min(1, 'Pajak wajib dipilih'),
   price: z.object({
     dpp_beli: z.number().min(0, 'DPP Beli harus 0 atau lebih'),
     dpp_jual: z.number().min(0, 'DPP Jual harus 0 atau lebih'),
@@ -71,7 +75,8 @@ const {
     description: '',
     stock: 0,
     is_bundle: isBundleFromUrl.value,
-    supplier_id: suppliers.value[0]?.id || 0, // Default ke supplier pertama jika ada
+    supplier_id: suppliers.value[0]?.id || 0,
+    tax_id: taxes.value[0]?.id || 0,
     price: {
       dpp_beli: 0,
       dpp_jual: 0,
@@ -94,6 +99,11 @@ onMounted(() => {
   if (suppliers.value.length > 0 && values.supplier_id === 0) {
     setFieldValue('supplier_id', suppliers.value[0].id)
   }
+  
+  // Set default tax jika belum dipilih dan ada data tax
+  if (taxes.value.length > 0 && values.tax_id === 0) {
+    setFieldValue('tax_id', taxes.value[0].id)
+  }
 })
 
 // Watch suppliers data untuk set default value
@@ -102,6 +112,44 @@ watch(suppliers, (newSuppliers) => {
     setFieldValue('supplier_id', newSuppliers[0].id)
   }
 }, { immediate: true })
+
+// Watch taxes data untuk set default value
+watch(taxes, (newTaxes) => {
+  if (newTaxes.length > 0 && values.tax_id === 0) {
+    setFieldValue('tax_id', newTaxes[0].id)
+  }
+}, { immediate: true })
+
+// Get tax info by ID
+const getTaxInfo = (id: number) => {
+  const tax = taxes.value.find(t => t.id === id)
+  return tax || null
+}
+
+// Selected tax info
+const selectedTax = computed(() => {
+  return getTaxInfo(values.tax_id)
+})
+
+// Calculate tax amount
+const calculateTaxAmount = (baseAmount: number) => {
+  if (!selectedTax.value) return 0
+  const taxRate = selectedTax.value.rate || 0
+  return (baseAmount * taxRate) / 100
+}
+
+// Calculate price with tax
+const pricesWithTax = computed(() => {
+  const basePrices = values.is_bundle ? bundlePrices.value : values.price
+  
+  return {
+    dpp_beli: basePrices.dpp_beli,
+    dpp_jual: basePrices.dpp_jual,
+    h_jual_b: basePrices.h_jual_b,
+    tax_amount: calculateTaxAmount(basePrices.h_jual_b),
+    total_with_tax: basePrices.h_jual_b + calculateTaxAmount(basePrices.h_jual_b)
+  }
+})
 
 // Saat item bundle dipilih
 function toggleBundleItem(product_id: number, checked: boolean) {
@@ -211,6 +259,9 @@ const onSubmit = handleSubmit(async (data) => {
     if (suppliers.value.length > 0) {
       setFieldValue('supplier_id', suppliers.value[0].id)
     }
+    if (taxes.value.length > 0) {
+      setFieldValue('tax_id', taxes.value[0].id)
+    }
   } catch (e: any) {
     toast.error('Gagal menyimpan', {
       description: e?.data?.message || e.message || 'Terjadi kesalahan.'
@@ -219,7 +270,7 @@ const onSubmit = handleSubmit(async (data) => {
 })
 
 // Loading state
-const isLoading = computed(() => suppliersLoading.value)
+const isLoading = computed(() => suppliersLoading.value || taxesLoading.value)
 </script>
 
 <template>
@@ -300,6 +351,31 @@ const isLoading = computed(() => suppliersLoading.value)
           </div>
           
           <div class="space-y-2">
+            <Label for="tax_id">Pajak <span class="text-red-500">*</span></Label>
+            <Select 
+              :model-value="values.tax_id.toString()" 
+              @update:modelValue="val => setFieldValue('tax_id', Number(val))"
+            >
+              <SelectTrigger :class="errors.tax_id ? 'border-red-500' : ''">
+                <SelectValue placeholder="Pilih pajak" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem 
+                  v-for="tax in taxes" 
+                  :key="tax.id" 
+                  :value="tax.id.toString()"
+                >
+                  {{ tax.name }} ({{ tax.rate }}%)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p v-if="errors.tax_id" class="text-sm text-red-500">{{ errors.tax_id }}</p>
+            <p v-if="selectedTax" class="text-xs text-blue-600">
+              Tarif pajak: {{ selectedTax.rate }}%
+            </p>
+          </div>
+          
+          <div class="space-y-2">
             <Label>Produk Bundle?</Label>
             <div class="flex items-center space-x-2">
               <Switch 
@@ -374,6 +450,25 @@ const isLoading = computed(() => suppliersLoading.value)
               </p>
             </div>
           </div>
+          
+          <!-- Tax Information -->
+          <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h4 class="font-medium text-blue-900 mb-2">Informasi Pajak</h4>
+            <div class="grid md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <span class="text-blue-700">Harga Dasar:</span>
+                <p class="font-medium">Rp {{ pricesWithTax.h_jual_b.toLocaleString('id-ID') }}</p>
+              </div>
+              <div>
+                <span class="text-blue-700">Pajak ({{ selectedTax?.rate || 0 }}%):</span>
+                <p class="font-medium">Rp {{ pricesWithTax.tax_amount.toLocaleString('id-ID') }}</p>
+              </div>
+              <div>
+                <span class="text-blue-700">Total + Pajak:</span>
+                <p class="font-medium text-blue-900">Rp {{ pricesWithTax.total_with_tax.toLocaleString('id-ID') }}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Bundle Items -->
@@ -394,8 +489,16 @@ const isLoading = computed(() => suppliersLoading.value)
                 <span>Rp {{ ((item.product?.prices?.[0]?.h_jual_b || 0) * item.quantity).toLocaleString('id-ID') }}</span>
               </div>
               <div class="border-t pt-1 font-medium flex justify-between">
-                <span>Total:</span>
+                <span>Subtotal:</span>
                 <span>Rp {{ bundlePrices.h_jual_b.toLocaleString('id-ID') }}</span>
+              </div>
+              <div class="flex justify-between text-blue-700">
+                <span>Pajak ({{ selectedTax?.rate || 0 }}%):</span>
+                <span>Rp {{ calculateTaxAmount(bundlePrices.h_jual_b).toLocaleString('id-ID') }}</span>
+              </div>
+              <div class="flex justify-between font-bold text-blue-900">
+                <span>Total dengan Pajak:</span>
+                <span>Rp {{ (bundlePrices.h_jual_b + calculateTaxAmount(bundlePrices.h_jual_b)).toLocaleString('id-ID') }}</span>
               </div>
             </div>
           </div>

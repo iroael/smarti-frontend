@@ -27,10 +27,10 @@ onMounted(async () => {
     <div class="flex flex-wrap items-end justify-between gap-2">
       <div>
         <h2 class="text-2xl font-bold tracking-tight">
-          Suppliers
+          Mitra Bisnis
         </h2>
         <p class="text-muted-foreground">
-          Here's a list of all registered suppliers.
+          Here's a list of all registered mitra bisnis.
         </p>
       </div>
 

@@ -20,7 +20,6 @@ const gridCols = computed(() => {
 })
 
 onMounted(async () => {
-  console.log(isCustomer.value)
   if (isCustomer.value) {
     await fetchProductsByRole()
   }

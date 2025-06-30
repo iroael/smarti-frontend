@@ -58,6 +58,20 @@ export function useAddress() {
     }
   }
 
+  const getAddressById = async (addressId: number) => {
+    try {
+      const data = await $fetch(`/address/${addressId}`, {
+        method: 'GET',
+        baseURL: config.public.apiBase,
+        headers: getAuthHeaders(),
+      })
+      return data
+    } catch (error) {
+      console.error('[useAddress] Failed to get address by ID:', error)
+      throw error
+    }
+  }
+
   // Convenience method to fetch current user's addresses
   const fetchUserAddresses = async () => {
     return fetchAddresses()
@@ -157,5 +171,6 @@ export function useAddress() {
     deleteAddress,
     setDefaultAddress,
     getOwnerInfo, // Export in case needed elsewhere
+    getAddressById,
   }
 }

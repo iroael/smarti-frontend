@@ -39,10 +39,10 @@ const handleDeleteSuccess = async () => {
     <div class="flex flex-wrap items-end justify-between gap-2">
       <div>
         <h2 class="text-2xl font-bold tracking-tight">
-          Customers
+          Pengembang Rumah Subsidi
         </h2>
         <p class="text-muted-foreground">
-          Here’s a list of all registered customers.
+          Here’s a list of all registered pengembang rumah subsidi.
         </p>
       </div>
       <Button variant="default" @click="showAddModal = true">

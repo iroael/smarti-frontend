@@ -1,8 +1,11 @@
 import { useFetch } from '#app'
 import { useRuntimeConfig } from '#imports'
 import { orderSchema, ordersResponseSchema, type Order } from '@/components/orders/data/schema'
+import { useToast } from '@/components/ui/toast'
 import { ref } from 'vue'
 import { useAuthStore } from '~/stores/auth'
+
+const { toast } = useToast()
 
 const salesOrders = ref<Order[]>([])
 const loading = ref(false)
@@ -133,6 +136,7 @@ export function useSalesOrder() {
       customerId: number
       notes?: string
       deliveryAddress?: string | number
+      shippingCost?: string | number
       items: {
         productId: number
         quantity: number
@@ -147,7 +151,8 @@ export function useSalesOrder() {
       },
       body: {
         ...payload,
-        deliveryAddress: payload.deliveryAddress, // pastikan string
+        deliveryAddress: payload.deliveryAddress,
+        shippingCost: payload.shippingCost,
       },
       transform: (rawData) => {
         if (!rawData || !rawData.order) {
@@ -174,13 +179,12 @@ export function useSalesOrder() {
     return data.value ?? null
   }
 
-
-  const updateSalesOrder = async (id: number, payload: Partial<Order>): Promise<Order | null> => {
+  const updateSalesOrder = async (id: string | number, payload: Partial<Order>): Promise<Order | null> => {
     const { data, error: fetchError } = await useFetch(`${config.public.apiBase}/orders/${id}`, {
       method: 'PUT',
       headers: {
         ...getAuthHeaders(),
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: payload,
       transform: (rawData) => {
@@ -190,7 +194,7 @@ export function useSalesOrder() {
           return null
         }
         return parsed.data
-      }
+      },
     })
 
     if (fetchError.value) {
@@ -200,11 +204,10 @@ export function useSalesOrder() {
 
     return data.value ?? null
   }
-
-  const deleteSalesOrder = async (id: number): Promise<boolean> => {
+  const deleteSalesOrder = async (id: string): Promise<boolean> => {
     const { error: fetchError } = await useFetch(`${config.public.apiBase}/orders/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
     })
 
     if (fetchError.value) {
@@ -213,6 +216,85 @@ export function useSalesOrder() {
     }
 
     return true
+  }
+
+  // proses payments
+  const prosesPayments = async (orderId: string) => {
+    try {
+      const { data, error } = await useFetch(`${config.public.apiBase}/orders/${orderId}/snap-token`, {
+        method: 'PATCH',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (error.value) {
+        throw error.value
+      }
+
+      return data.value
+    } catch (err: any) {
+      toast({
+        title: 'Failed to Get SnapToken',
+        description: err?.message || 'An error occurred',
+        variant: 'destructive',
+      })
+      throw err
+    }
+  }
+
+
+  // Cancel order
+  const cancelSalesOrder = async (id: string): Promise<Order | null> => {
+    const { data, error: fetchError } = await useFetch(`${config.public.apiBase}/orders/${id}/cancel`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      transform: (rawData) => {
+        const parsed = orderSchema.safeParse(rawData)
+        if (!parsed.success) {
+          console.error('Failed to parse cancelled order:', parsed.error)
+          return null
+        }
+        return parsed.data
+      },
+    })
+
+    if (fetchError.value) {
+      console.error('Cancel order error:', fetchError.value)
+      return null
+    }
+
+    return data.value ?? null
+  }
+
+  // Update order status
+  const updateSalesOrderStatus = async (
+    id: string,
+    status: string,
+  ): Promise<Order | null> => {
+    const { data, error: fetchError } = await useFetch(
+      `${config.public.apiBase}/orders/${id}/status/${status}`,
+      {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        transform: (rawData) => {
+          const parsed = orderSchema.safeParse(rawData)
+          if (!parsed.success) {
+            console.error('Failed to parse updated status:', parsed.error)
+            return null
+          }
+          return parsed.data
+        },
+      },
+    )
+
+    if (fetchError.value) {
+      console.error('Update order status error:', fetchError.value)
+      return null
+    }
+
+    return data.value ?? null
   }
 
   return {
@@ -226,5 +308,8 @@ export function useSalesOrder() {
     createSalesOrder,
     updateSalesOrder,
     deleteSalesOrder,
+    prosesPayments,
+    cancelSalesOrder,
+    updateSalesOrderStatus,
   }
 }

@@ -26,3 +26,4 @@ export interface NavMenu {
 }
 
 export declare type NavMenuItems = (NavLink | NavGroup | NavSectionTitle)[]
+// export declare type NavMenuItems = (NavLink | NavGroup)[]

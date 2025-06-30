@@ -2,9 +2,10 @@
 import type { NavMenu, NavMenuItems } from '~/types/nav'
 
 export const navMenu: NavMenu[] = [
+  // CUSTOMER
   {
     heading: 'Customer Dashboard',
-    roles: ['customer'], // ⬅ Roles untuk heading
+    roles: ['customer'],
     items: [
       {
         title: 'Profil Perusahaan',
@@ -12,14 +13,20 @@ export const navMenu: NavMenu[] = [
         link: '/account',
         roles: ['customer'],
       },
-      // {
-      //   title: 'Product',
-      //   icon: 'i-lucide-box',
-      //   link: '/product',
-      //   roles: ['customer'],
-      // },
+      {
+        title: 'Buat Pesanan',
+        icon: 'i-lucide-package',
+        link: '/orders/new-create',
+        roles: ['customer'],
+      },
       {
         title: 'Pesanan Saya',
+        icon: 'i-lucide-package',
+        link: '/orders',
+        roles: ['customer'],
+      },
+      {
+        title: 'Perumahan Saya',
         icon: 'i-lucide-package',
         link: '/orders',
         roles: ['customer'],
@@ -33,20 +40,34 @@ export const navMenu: NavMenu[] = [
     ],
   },
   {
+    heading: 'Smarti',
+    roles: ['customer'],
+    items: [
+      {
+        title: 'Pasang Smarti',
+        icon: 'i-lucide-building',
+        link: '/account',
+        roles: ['customer'],
+      },
+    ],
+  },
+
+  // SUPPLIER
+  {
     heading: 'Supplier Dashboard',
     roles: ['supplier'],
     items: [
-      // {
-      //   title: 'Katalog Product',
-      //   icon: 'i-lucide-box',
-      //   link: '/product/catalog',
-      //   roles: ['supplier'],
-      // },
       {
         title: 'Profil Perusahaan',
         icon: 'i-lucide-building',
         link: '/account',
         roles: ['supplier'],
+      },
+      {
+        title: 'Buat Pesanan',
+        icon: 'i-lucide-package',
+        link: '/orders/new-create',
+        roles: ['customer'],
       },
       {
         title: 'Pesanan Masuk',
@@ -66,23 +87,13 @@ export const navMenu: NavMenu[] = [
         link: '/product/my',
         roles: ['supplier'],
       },
-      // {
-      //   title: 'Status Pemasangan',
-      //   icon: 'i-lucide-trending-up',
-      //   link: '/supplier/installation-status',
-      //   roles: ['supplier'],
-      // },
-      // {
-      //   title: 'Laporan Evaluasi',
-      //   icon: 'i-lucide-file-text',
-      //   link: '/supplier/evaluation-reports',
-      //   roles: ['supplier'],
-      // },
     ],
   },
+
+  // GENERAL
   {
     heading: 'General',
-    roles: ['admin'], // ⬅ Roles untuk heading
+    roles: ['admin'],
     items: [
       {
         title: 'Dashboard',
@@ -92,63 +103,189 @@ export const navMenu: NavMenu[] = [
       },
     ],
   },
+
+  // BUSINESS
+  // {
+  //   heading: 'Business',
+  //   roles: ['admin', 'supplier'],
+  //   items: [
+  //     {
+  //       title: 'Sales Orders',
+  //       icon: 'i-lucide-package',
+  //       link: '/orders',
+  //       roles: ['admin'],
+  //     },
+  //     {
+  //       title: 'Installation',
+  //       icon: 'i-lucide-shopping-cart',
+  //       link: '/purchase-orders',
+  //       roles: ['admin', 'customer'],
+  //     },
+  //   ],
+  // },
+
+  // PRODUCT
   {
-    heading: 'Business',
-    roles: ['admin', 'supplier'], // ⬅ Roles untuk heading
+    // heading: 'Product',
+    roles: ['admin', 'supplier'],
     items: [
       {
-        title: 'Sales Orders',
-        icon: 'i-lucide-package',
+        title: 'Master',
+        icon: 'i-lucide-lock-keyhole-open',
+        roles: ['admin'],
+        children: [
+          {
+            title: 'Item',
+            icon: 'i-lucide-box',
+            link: '/product/item',
+            roles: ['admin'],
+          },
+          {
+            title: 'Rakitan',
+            icon: 'i-lucide-cube',
+            link: '/product/rakitan',
+            roles: ['admin'],
+          },
+          {
+            title: 'Bundling',
+            icon: 'i-lucide-package-plus',
+            link: '/product/bundling',
+            roles: ['admin'],
+          },
+          {
+            title: 'Tax',
+            icon: 'i-lucide-percent',
+            link: '/tax',
+            roles: ['admin'],
+          },
+        ],
+      },
+    ],
+  },
+
+  // PURCHASING
+  {
+    // heading: 'Pembelian',
+    roles: ['admin'],
+    items: [
+      {
+        title: 'Pembelian',
+        icon: 'i-lucide-lock-keyhole-open',
+        roles: ['admin'],
+        children: [
+          {
+            title: 'Pesanan Pembelian',
+            icon: 'i-lucide-file-plus',
+            link: '/purchase-orders',
+            roles: ['admin'],
+          },
+          {
+            title: 'Penerimaan Barang',
+            icon: 'i-lucide-truck',
+            link: '/goods-receipt',
+            roles: ['admin'],
+          },
+          {
+            title: 'Transansaksi Pembelian',
+            icon: 'i-lucide-file-text',
+            link: '/purchase-transactions',
+            roles: ['admin'],
+          },
+        ],
+      },
+    ],
+  },
+
+  // SALES
+  {
+    heading: 'Penjualan',
+    roles: ['admin'],
+    items: [
+      {
+        title: 'Pesanan Jual',
+        icon: 'i-lucide-shopping-cart',
         link: '/orders',
         roles: ['admin'],
       },
       {
-        title: 'Installation',
-        icon: 'i-lucide-shopping-cart',
-        link: '/purchase-orders',
-        roles: ['admin', 'customer'],
+        title: 'Pengiriman',
+        icon: 'i-lucide-send',
+        link: '/delivery',
+        roles: ['admin'],
+      },
+      {
+        title: 'Transaksi Penjualan',
+        icon: 'i-lucide-file-text',
+        link: '/sales-transactions',
+        roles: ['admin'],
       },
     ],
   },
+
+  // SYNC
   {
-    heading: 'Product',
+    heading: 'Sinkronisasi',
+    roles: ['admin'],
+    items: [
+      {
+        title: 'Update Harga',
+        icon: 'i-lucide-refresh-ccw',
+        link: '/price-update',
+        roles: ['admin'],
+      },
+    ],
+  },
+
+  // RECONCILIATION
+  {
+    heading: 'Rekonsiliasi Data',
+    roles: ['admin'],
+    items: [
+      {
+        title: 'Accutare',
+        icon: 'i-lucide-database',
+        link: '/reconcile/accutare',
+        roles: ['admin'],
+      },
+      {
+        title: 'Payment Gateway',
+        icon: 'i-lucide-credit-card',
+        link: '/reconcile/payment',
+        roles: ['admin'],
+      },
+      {
+        title: 'Bank',
+        icon: 'i-lucide-banknote',
+        link: '/reconcile/bank',
+        roles: ['admin'],
+      },
+    ],
+  },
+
+  // MASTER
+  {
+    heading: 'Master',
     roles: ['admin', 'supplier'],
     items: [
       {
-        title: 'Bundling',
-        icon: 'i-lucide-package-plus', // ikon bundling / paket produk
-        link: '/product/bundling',
-        roles: ['admin'],
-      },
-      {
-        title: 'Item',
-        icon: 'i-lucide-box', // ikon item/produk individual
-        link: '/product/item',
-        roles: ['admin'],
-      },
-    ],
-  },
-  {
-    heading: 'Master',
-    roles: ['admin', 'supplier'], // ⬅ Roles untuk heading
-    items: [
-      {
-        title: 'Customers',
+        title: 'SSO Sireng',
         icon: 'i-lucide-users',
         link: '/customers',
         roles: ['admin'],
       },
       {
-        title: 'Suppliers',
+        title: 'Vendor',
         icon: 'i-lucide-truck',
         link: '/suppliers',
         roles: ['admin'],
       },
     ],
   },
+
+  // REPORTS
   {
     heading: 'Reports',
-    roles: ['admin', 'supplier'], // ⬅ Roles untuk heading
+    roles: ['admin', 'supplier'],
     items: [
       {
         title: 'Sales Report',
@@ -176,9 +313,11 @@ export const navMenu: NavMenu[] = [
       },
     ],
   },
+
+  // MANAGEMENT
   {
     heading: 'Management',
-    roles: ['admin'], // ⬅ Roles untuk heading
+    roles: ['admin'],
     items: [
       {
         title: 'User Management',
@@ -220,31 +359,15 @@ export const navMenuBottom: NavMenuItems = [
 // Helper function to filter menu items by role
 export function filterMenuByRole(menu: NavMenu[], userRole: string): NavMenu[] {
   return menu
-    .filter(section => {
-      // ⬅ Filter heading berdasarkan roles
-      if (section.roles && section.roles.length > 0) {
-        return section.roles.includes(userRole)
-      }
-      return true
-    })
+    .filter(section => section.roles?.includes(userRole))
     .map(section => ({
       ...section,
-      items: section.items.filter(item => {
-        if ('roles' in item && item.roles) {
-          return item.roles.includes(userRole)
-        }
-        return true
-      }),
+      items: section.items.filter(item => item.roles?.includes(userRole)),
     }))
-    .filter(section => section.items.length > 0) // Filter section yang tidak memiliki items
+    .filter(section => section.items.length > 0)
 }
 
 // Helper function to filter bottom menu by role
 export function filterBottomMenuByRole(menu: NavMenuItems, userRole: string): NavMenuItems {
-  return menu.filter(item => {
-    if ('roles' in item && item.roles) {
-      return item.roles.includes(userRole)
-    }
-    return true
-  })
+  return menu.filter(item => item.roles?.includes(userRole))
 }
