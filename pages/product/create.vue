@@ -1,65 +1,35 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import { useForm } from 'vee-validate'
-import { toTypedSchema } from '@vee-validate/zod'
-import { z } from 'zod'
+import { productFormSchema } from '@/components/product/data/schema'
 import { useProducts } from '@/composables/useProducts'
-import { useSuppliers } from '@/composables/useSupplier'
 import { useProductTax } from '@/composables/useProductTax'
+import { useSuppliers } from '@/composables/useSupplier'
+import { toTypedSchema } from '@vee-validate/zod'
+import { useForm } from 'vee-validate'
+import { computed, onMounted, ref, watch, nextTick } from 'vue'
 import { toast } from 'vue-sonner'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+const inventoryTypes = [
+  { value: 'stock', label: 'Barang (Stock)' },
+  { value: 'service', label: 'Jasa (Service)' },
+  { value: 'digital', label: 'Digital' }
+]
 
 const { createProduct, fetchProductNonBundle, nonBundleProducts } = useProducts()
 const { suppliers, loading: suppliersLoading, fetchSuppliers } = useSuppliers()
 const { taxes, loading: taxesLoading, fetchTaxes } = useProductTax()
 
-// Fetch data saat component dimount
-await Promise.all([
-  fetchProductNonBundle(),
-  fetchSuppliers(),
-  fetchTaxes()
-])
+// Loading states
+const isSubmitting = ref(false)
+const isInitializing = ref(true)
 
-// Mendapatkan parameter dari URL
-const getUrlParams = () => {
-  const urlParams = new URLSearchParams(window.location.search)
-  return urlParams.get('type')
-}
-
+// URL params handling
+const getUrlParams = () => new URLSearchParams(window.location.search).get('type')
 const urlType = ref(getUrlParams())
 const isBundleFromUrl = computed(() => urlType.value === 'bundling')
-const isDisabledSwitch = computed(() => urlType.value === 'bundling' || urlType.value === 'nonbundling')
+const isDisabledSwitch = computed(() => urlType.value !== null)
 
-const schema = toTypedSchema(z.object({
-  product_code: z.string().min(1, 'Kode produk wajib diisi'),
-  name: z.string().min(1, 'Nama produk wajib diisi'),
-  description: z.string().min(1, 'Deskripsi wajib diisi'),
-  stock: z.number().min(0, 'Stok tidak boleh negatif'),
-  is_bundle: z.boolean(),
-  supplier_id: z.number().min(1, 'Supplier wajib dipilih'),
-  tax_id: z.number().min(1, 'Pajak wajib dipilih'),
-  price: z.object({
-    dpp_beli: z.number().min(0, 'DPP Beli harus 0 atau lebih'),
-    dpp_jual: z.number().min(0, 'DPP Jual harus 0 atau lebih'),
-    h_jual_b: z.number().min(0, 'Harga Jual harus 0 atau lebih'),
-  }),
-  bundleItems: z.array(z.object({
-    product_id: z.number(),
-    quantity: z.number().min(1, 'Quantity minimal 1'),
-  })).optional().refine((items) => {
-    // Validasi untuk bundle: harus ada minimal 1 item
-    return !isBundleFromUrl.value || (items && items.length > 0)
-  }, {
-    message: 'Bundle harus memiliki minimal 1 item'
-  }),
-}))
+// Form setup
+const schema = toTypedSchema(productFormSchema)
 
 const {
   values,
@@ -67,210 +37,323 @@ const {
   setFieldValue,
   handleSubmit,
   resetForm,
+  validateField,
 } = useForm({
   validationSchema: schema,
   initialValues: {
     product_code: '',
     name: '',
     description: '',
+    inventory_type: 'stock',
     stock: 0,
     is_bundle: isBundleFromUrl.value,
-    supplier_id: suppliers.value[0]?.id || 0,
-    tax_id: taxes.value[0]?.id || 0,
+    supplier_id: 0, // Set to 0 initially, will be updated after data loads
+    tax_id: 0, // Set to 0 initially, will be updated after data loads
+    weight: 0,
+    length: 0,
+    height: 0,
+    width: 0,
+    dimension: '',
     price: {
       dpp_beli: 0,
       dpp_jual: 0,
       h_jual_b: 0,
     },
-    bundleItems: []
+    bundleItems: [],
   },
 })
 
-// Setup saat component dimount
-onMounted(() => {
-  // Set nilai is_bundle berdasarkan URL parameter
+// Fetch data function
+const fetchData = async () => {
+  try {
+    isInitializing.value = true
+    
+    await Promise.all([
+      fetchProductNonBundle(),
+      fetchSuppliers(),
+      fetchTaxes(),
+    ])
+    
+    // Wait for next tick to ensure DOM is updated
+    await nextTick()
+    
+    // Set default values after data is loaded
+    if (suppliers.value.length > 0 && values.supplier_id === 0) {
+      setFieldValue('supplier_id', suppliers.value[0].id)
+    }
+
+    if (taxes.value.length > 0 && values.tax_id === 0) {
+      setFieldValue('tax_id', taxes.value[0].id)
+    }
+    
+  } catch (error) {
+    toast.error('Gagal memuat data', {
+      description: 'Terjadi kesalahan saat memuat data produk, supplier, atau pajak.'
+    })
+  } finally {
+    isInitializing.value = false
+  }
+}
+
+// Initialize component
+onMounted(async () => {
+  await fetchData()
+  
+  // Set bundle state based on URL
   if (urlType.value === 'bundling') {
     setFieldValue('is_bundle', true)
   } else if (urlType.value === 'nonbundling') {
     setFieldValue('is_bundle', false)
   }
-  
-  // Set default supplier jika belum dipilih dan ada data supplier
-  if (suppliers.value.length > 0 && values.supplier_id === 0) {
-    setFieldValue('supplier_id', suppliers.value[0].id)
-  }
-  
-  // Set default tax jika belum dipilih dan ada data tax
-  if (taxes.value.length > 0 && values.tax_id === 0) {
-    setFieldValue('tax_id', taxes.value[0].id)
-  }
 })
 
-// Watch suppliers data untuk set default value
-watch(suppliers, (newSuppliers) => {
-  if (newSuppliers.length > 0 && values.supplier_id === 0) {
-    setFieldValue('supplier_id', newSuppliers[0].id)
+// Watch inventory type changes
+watch(() => values.inventory_type, (newType) => {
+  if (newType !== 'stock') {
+    setFieldValue('stock', 0)
   }
-}, { immediate: true })
+  validateField('stock')
+})
 
-// Watch taxes data untuk set default value
-watch(taxes, (newTaxes) => {
-  if (newTaxes.length > 0 && values.tax_id === 0) {
-    setFieldValue('tax_id', newTaxes[0].id)
-  }
-}, { immediate: true })
-
-// Get tax info by ID
-const getTaxInfo = (id: number) => {
-  const tax = taxes.value.find(t => t.id === id)
-  return tax || null
-}
-
-// Selected tax info
+// Tax calculations with null checks
 const selectedTax = computed(() => {
-  return getTaxInfo(values.tax_id)
+  if (!taxes.value || taxes.value.length === 0) return null
+  return taxes.value.find(t => t.id === values.tax_id) || null
 })
 
-// Calculate tax amount
-const calculateTaxAmount = (baseAmount: number) => {
-  if (!selectedTax.value) return 0
-  const taxRate = selectedTax.value.rate || 0
-  return (baseAmount * taxRate) / 100
+const calculateTaxAmount = (base: number) => {
+  return selectedTax.value ? (base * selectedTax.value.rate) / 100 : 0
 }
 
-// Calculate price with tax
-const pricesWithTax = computed(() => {
-  const basePrices = values.is_bundle ? bundlePrices.value : values.price
-  
-  return {
-    dpp_beli: basePrices.dpp_beli,
-    dpp_jual: basePrices.dpp_jual,
-    h_jual_b: basePrices.h_jual_b,
-    tax_amount: calculateTaxAmount(basePrices.h_jual_b),
-    total_with_tax: basePrices.h_jual_b + calculateTaxAmount(basePrices.h_jual_b)
-  }
-})
-
-// Saat item bundle dipilih
-function toggleBundleItem(product_id: number, checked: boolean) {
-  const current = new Map(values.bundleItems?.map(item => [item.product_id, item]) ?? [])
-  if (checked) {
-    current.set(product_id, { product_id, quantity: 1 })
-  } else {
-    current.delete(product_id)
-  }
-  setFieldValue('bundleItems', Array.from(current.values()))
-}
-
-// Update quantity bundle item
-function updateBundleItemQuantity(product_id: number, quantity: number) {
-  if (quantity < 1) quantity = 1
-  const current = values.bundleItems?.map(item => 
-    item.product_id === product_id 
-      ? { ...item, quantity } 
-      : item
-  ) || []
-  setFieldValue('bundleItems', current)
-}
-
-// Perhitungan harga otomatis untuk bundle
+// Bundle price calculations with null checks
 const bundlePrices = computed(() => {
-  if (!values.is_bundle || !values.bundleItems || values.bundleItems.length === 0) {
-    return {
-      dpp_beli: 0,
-      dpp_jual: 0,
-      h_jual_b: 0,
-    }
+  if (!values.is_bundle || !values.bundleItems?.length || !nonBundleProducts.value) {
+    return { dpp_beli: 0, dpp_jual: 0, h_jual_b: 0 }
   }
 
   return values.bundleItems.reduce((totals, item) => {
-    const found = nonBundleProducts.value.find(p => p.id === item.product_id)
-    if (found && found.prices && found.prices[0]) {
-      const price = found.prices[0]
-      return {
-        dpp_beli: totals.dpp_beli + (Number(price.dpp_beli) || 0) * item.quantity,
-        dpp_jual: totals.dpp_jual + (Number(price.dpp_jual) || 0) * item.quantity,
-        h_jual_b: totals.h_jual_b + (Number(price.h_jual_b) || 0) * item.quantity,
-      }
+    const product = nonBundleProducts.value.find(p => p.id === item.product_id)
+    const price = product?.prices?.[0]
+    
+    if (!price) return totals
+    
+    return {
+      dpp_beli: totals.dpp_beli + (Number(price.dpp_beli) * item.quantity),
+      dpp_jual: totals.dpp_jual + (Number(price.dpp_jual) * item.quantity),
+      h_jual_b: totals.h_jual_b + (Number(price.h_jual_b) * item.quantity),
     }
-    return totals
-  }, {
-    dpp_beli: 0,
-    dpp_jual: 0,
-    h_jual_b: 0,
-  })
+  }, { dpp_beli: 0, dpp_jual: 0, h_jual_b: 0 })
 })
 
-// Auto update harga saat bundle items berubah
-watch([() => values.bundleItems, () => values.is_bundle], () => {
-  if (values.is_bundle) {
-    const prices = bundlePrices.value
-    setFieldValue('price.dpp_beli', prices.dpp_beli)
-    setFieldValue('price.dpp_jual', prices.dpp_jual)
-    setFieldValue('price.h_jual_b', prices.h_jual_b)
+// Watch bundle changes with better error handling
+watch([() => values.bundleItems, () => values.is_bundle], async () => {
+  if (values.is_bundle && !isInitializing.value) {
+    try {
+      await nextTick() // Ensure DOM is ready
+      const p = bundlePrices.value
+      setFieldValue('price.dpp_beli', p.dpp_beli)
+      setFieldValue('price.dpp_jual', p.dpp_jual)
+      setFieldValue('price.h_jual_b', p.h_jual_b)
+    } catch (error) {
+      // Silent error handling - no console output
+    }
   }
 }, { deep: true })
 
-// Auto disable input harga saat bundle
-watch(() => values.is_bundle, val => {
-  if (val) {
-    const prices = bundlePrices.value
-    setFieldValue('price', {
-      dpp_beli: prices.dpp_beli,
-      dpp_jual: prices.dpp_jual,
-      h_jual_b: prices.h_jual_b,
-    })
-  }
-})
+// Combined loading state
+const isLoading = computed(() => 
+  suppliersLoading.value || 
+  taxesLoading.value || 
+  isSubmitting.value || 
+  isInitializing.value
+)
 
-// Get supplier name by ID
-const getSupplierName = (id: number) => {
-  const supplier = suppliers.value.find(s => s.id === id)
-  return supplier ? supplier.name : `Supplier ${id}`
+// Bundle items management with error handling
+function toggleBundleItem(product_id: number, checked: boolean) {
+  try {
+    const currentItems = values.bundleItems || []
+    let updatedItems
+    
+    if (checked) {
+      if (!currentItems.some(item => item.product_id === product_id)) {
+        updatedItems = [...currentItems, { product_id, quantity: 1 }]
+      } else {
+        updatedItems = currentItems
+      }
+    } else {
+      updatedItems = currentItems.filter(item => item.product_id !== product_id)
+    }
+
+    setFieldValue('bundleItems', updatedItems)
+  } catch (error) {
+    toast.error('Gagal mengubah item bundle')
+  }
 }
 
-// Selected items for bundle summary
+function updateBundleItemQuantity(product_id: number, quantity: number) {
+  try {
+    const updated = (values.bundleItems || []).map(item =>
+      item.product_id === product_id
+        ? { ...item, quantity: Math.max(1, quantity) }
+        : item,
+    )
+    setFieldValue('bundleItems', updated)
+  } catch (error) {
+    toast.error('Gagal mengubah jumlah item bundle')
+  }
+}
+
 const selectedBundleItems = computed(() => {
-  if (!values.bundleItems || values.bundleItems.length === 0) return []
-  
-  return values.bundleItems.map(item => {
-    const product = nonBundleProducts.value.find(p => p.id === item.product_id)
-    return {
+  if (!values.bundleItems || !nonBundleProducts.value) return []
+
+  return values.bundleItems
+    .map(item => ({
       ...item,
-      product
-    }
-  }).filter(item => item.product)
+      product: nonBundleProducts.value.find(p => p.id === item.product_id)
+    }))
+    .filter(item => item.product)
 })
 
-// Submit
+// Data preparation untuk submit
+const prepareSubmitData = (formData: any) => {
+  const submitData = {
+    ...formData,
+    // Pastikan numeric fields dalam format yang benar
+    stock: Number(formData.stock),
+    weight: Number(formData.weight),
+    length: Number(formData.length),
+    height: Number(formData.height),
+    width: Number(formData.width),
+    supplier_id: Number(formData.supplier_id),
+    tax_id: Number(formData.tax_id),
+    price: {
+      dpp_beli: Number(formData.price.dpp_beli),
+      dpp_jual: Number(formData.price.dpp_jual),
+      h_jual_b: Number(formData.price.h_jual_b),
+    },
+    // Hanya sertakan bundleItems jika ini adalah bundle product
+    ...(formData.is_bundle && {
+      bundleItems: formData.bundleItems?.map((item: any) => ({
+        product_id: Number(item.product_id),
+        quantity: Number(item.quantity),
+      })) || [],
+    }),
+  }
+
+  // Remove bundleItems jika bukan bundle
+  if (!formData.is_bundle) {
+    delete submitData.bundleItems
+  }
+
+  return submitData
+}
+
+// Form validation sebelum submit
+const validateFormData = (data: any) => {
+  const errors = []
+
+  // Required field validation
+  if (!data.name?.trim()) {
+    errors.push('Nama produk wajib diisi')
+  }
+
+  if (!data.product_code?.trim()) {
+    errors.push('Kode produk wajib diisi')
+  }
+
+  // Bundle validation
+  if (data.is_bundle && (!data.bundleItems || data.bundleItems.length === 0)) {
+    errors.push('Produk bundle harus memiliki minimal 1 item')
+  }
+
+  // Stock validation
+  if (data.inventory_type === 'stock' && data.stock < 0) {
+    errors.push('Stock tidak boleh negatif')
+  }
+
+  // Price validation
+  if (data.price.dpp_beli < 0 || data.price.dpp_jual < 0 || data.price.h_jual_b < 0) {
+    errors.push('Harga tidak boleh negatif')
+  }
+
+  return errors
+}
+
+// Form submission with better error handling
 const onSubmit = handleSubmit(async (data) => {
+  if (isInitializing.value) {
+    toast.error('Form masih dalam proses inisialisasi, silakan tunggu sebentar')
+    return
+  }
+
   try {
-    // Validasi tambahan untuk bundle
-    if (data.is_bundle && (!data.bundleItems || data.bundleItems.length === 0)) {
-      toast.error('Bundle harus memiliki minimal 1 item')
+    isSubmitting.value = true
+
+    // Validasi tambahan
+    const validationErrors = validateFormData(data)
+    if (validationErrors.length > 0) {
+      toast.error('Validasi gagal', {
+        description: validationErrors.join(', '),
+      })
       return
     }
-    
-    await createProduct(data)
-    toast.success('Produk berhasil disimpan!')
-    resetForm()
-    
-    // Reset ke nilai default
-    if (suppliers.value.length > 0) {
-      setFieldValue('supplier_id', suppliers.value[0].id)
+
+    // Siapkan data untuk submit
+    const submitData = prepareSubmitData(data)
+
+    // Panggil fungsi createProduct
+    const result = await createProduct(submitData)
+    if (result) {
+      toast.success('Produk berhasil disimpan', {
+        description: `Produk "${data.name}" telah ditambahkan ke sistem.`,
+      })
+      // Reset form setelah berhasil
+      await nextTick()
+      resetForm()
     }
-    if (taxes.value.length > 0) {
-      setFieldValue('tax_id', taxes.value[0].id)
+    else {
+      throw new Error(result.message || 'Gagal menyimpan produk')
     }
-  } catch (e: any) {
-    toast.error('Gagal menyimpan', {
-      description: e?.data?.message || e.message || 'Terjadi kesalahan.'
+  }
+  catch (error) {
+    let errorMessage = 'Terjadi kesalahan saat menyimpan produk'
+
+    if (error instanceof Error) {
+      errorMessage = error.message
+    }
+    else if (typeof error === 'string') {
+      errorMessage = error
+    }
+
+    toast.error('Gagal menyimpan produk', {
+      description: errorMessage,
     })
+  }
+  finally {
+    isSubmitting.value = false
   }
 })
 
-// Loading state
-const isLoading = computed(() => suppliersLoading.value || taxesLoading.value)
+// Function untuk reset form
+const handleReset = async () => {
+  try {
+    await nextTick()
+    resetForm()
+    toast.info('Form telah direset')
+  }
+  catch (error) {
+    // Silent error handling
+  }
+}
+
+// Expose functions untuk digunakan di template
+defineExpose({
+  onSubmit,
+  handleReset,
+  isLoading,
+  isSubmitting,
+  isInitializing,
+})
 </script>
 
 <template>
@@ -315,16 +398,41 @@ const isLoading = computed(() => suppliersLoading.value || taxesLoading.value)
           </div>
           
           <div class="space-y-2">
+            <Label for="inventory_type">Jenis Inventori</Label>
+            <Select 
+              :model-value="values.inventory_type" 
+              @update:modelValue="val => setFieldValue('inventory_type', val)"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih jenis inventori" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem 
+                  v-for="type in inventoryTypes" 
+                  :key="type.value" 
+                  :value="type.value"
+                >
+                  {{ type.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div class="space-y-2">
             <Label for="stock">Stok</Label>
             <Input 
               id="stock" 
               type="number" 
               :model-value="values.stock" 
+              :disabled="values.inventory_type !== 'stock'"
               @update:modelValue="val => setFieldValue('stock', Number(val))"
               placeholder="0"
               min="0"
               :class="errors.stock ? 'border-red-500' : ''"
             />
+            <p v-if="values.inventory_type !== 'stock'" class="text-xs text-gray-500">
+              Stok hanya berlaku untuk barang (stock)
+            </p>
             <p v-if="errors.stock" class="text-sm text-red-500">{{ errors.stock }}</p>
           </div>
           
@@ -370,9 +478,6 @@ const isLoading = computed(() => suppliersLoading.value || taxesLoading.value)
               </SelectContent>
             </Select>
             <p v-if="errors.tax_id" class="text-sm text-red-500">{{ errors.tax_id }}</p>
-            <p v-if="selectedTax" class="text-xs text-blue-600">
-              Tarif pajak: {{ selectedTax.rate }}%
-            </p>
           </div>
           
           <div class="space-y-2">
@@ -401,6 +506,70 @@ const isLoading = computed(() => suppliersLoading.value || taxesLoading.value)
             :class="errors.description ? 'border-red-500' : ''"
           />
           <p v-if="errors.description" class="text-sm text-red-500">{{ errors.description }}</p>
+        </div>
+
+        <!-- Informasi Fisik Produk -->
+        <div class="space-y-4">
+          <h3 class="font-semibold text-lg">Informasi Fisik</h3>
+          <div class="grid md:grid-cols-5 gap-4">
+            <div class="space-y-2">
+              <Label for="weight">Berat (gram)</Label>
+              <Input
+                id="weight"
+                type="number"
+                :model-value="values.weight"
+                @update:modelValue="val => setFieldValue('weight', Number(val))"
+                placeholder="0"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div class="space-y-2">
+              <Label for="length">Panjang (cm)</Label>
+              <Input
+                id="length"
+                type="number"
+                :model-value="values.length"
+                @update:modelValue="val => setFieldValue('length', Number(val))"
+                placeholder="0"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div class="space-y-2">
+              <Label for="width">Width (cm)</Label>
+              <Input
+                id="width"
+                type="number"
+                :model-value="values.length"
+                @update:modelValue="val => setFieldValue('width', Number(val))"
+                placeholder="0"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div class="space-y-2">
+              <Label for="height">Tinggi (cm)</Label>
+              <Input 
+                id="height"
+                type="number" 
+                :model-value="values.height" 
+                @update:modelValue="val => setFieldValue('height', Number(val))"
+                placeholder="0"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div class="space-y-2">
+              <Label for="dimension">Dimensi</Label>
+              <Input 
+                id="dimension"
+                :model-value="values.dimension" 
+                @update:modelValue="val => setFieldValue('dimension', val)"
+                placeholder="Contoh: 10x20x30 cm"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- Harga -->
@@ -452,20 +621,20 @@ const isLoading = computed(() => suppliersLoading.value || taxesLoading.value)
           </div>
           
           <!-- Tax Information -->
-          <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h4 class="font-medium text-blue-900 mb-2">Informasi Pajak</h4>
+          <div v-if="selectedTax" class="p-4 bg-muted rounded-lg">
+            <h4 class="font-medium mb-2">Informasi Pajak</h4>
             <div class="grid md:grid-cols-3 gap-4 text-sm">
               <div>
-                <span class="text-blue-700">Harga Dasar:</span>
-                <p class="font-medium">Rp {{ pricesWithTax.h_jual_b.toLocaleString('id-ID') }}</p>
+                <span class="text-muted-foreground">Pajak {{ selectedTax.name }}:</span>
+                <p class="font-medium">{{ selectedTax.rate }}%</p>
               </div>
               <div>
-                <span class="text-blue-700">Pajak ({{ selectedTax?.rate || 0 }}%):</span>
-                <p class="font-medium">Rp {{ pricesWithTax.tax_amount.toLocaleString('id-ID') }}</p>
+                <span class="text-muted-foreground">Pajak dari DPP Beli:</span>
+                <p class="font-medium">Rp {{ calculateTaxAmount(values.price.dpp_beli).toLocaleString('id-ID') }}</p>
               </div>
               <div>
-                <span class="text-blue-700">Total + Pajak:</span>
-                <p class="font-medium text-blue-900">Rp {{ pricesWithTax.total_with_tax.toLocaleString('id-ID') }}</p>
+                <span class="text-muted-foreground">Pajak dari DPP Jual:</span>
+                <p class="font-medium">Rp {{ calculateTaxAmount(values.price.dpp_jual).toLocaleString('id-ID') }}</p>
               </div>
             </div>
           </div>
@@ -489,16 +658,8 @@ const isLoading = computed(() => suppliersLoading.value || taxesLoading.value)
                 <span>Rp {{ ((item.product?.prices?.[0]?.h_jual_b || 0) * item.quantity).toLocaleString('id-ID') }}</span>
               </div>
               <div class="border-t pt-1 font-medium flex justify-between">
-                <span>Subtotal:</span>
+                <span>Total:</span>
                 <span>Rp {{ bundlePrices.h_jual_b.toLocaleString('id-ID') }}</span>
-              </div>
-              <div class="flex justify-between text-blue-700">
-                <span>Pajak ({{ selectedTax?.rate || 0 }}%):</span>
-                <span>Rp {{ calculateTaxAmount(bundlePrices.h_jual_b).toLocaleString('id-ID') }}</span>
-              </div>
-              <div class="flex justify-between font-bold text-blue-900">
-                <span>Total dengan Pajak:</span>
-                <span>Rp {{ (bundlePrices.h_jual_b + calculateTaxAmount(bundlePrices.h_jual_b)).toLocaleString('id-ID') }}</span>
               </div>
             </div>
           </div>
@@ -522,9 +683,9 @@ const isLoading = computed(() => suppliersLoading.value || taxesLoading.value)
             <TableBody>
               <TableRow v-for="item in nonBundleProducts" :key="item.id">
                 <TableCell>
-                  <input 
-                    type="checkbox" 
-                    :checked="values.bundleItems?.some(p => p.product_id === item.id)" 
+                  <input
+                    type="checkbox"
+                    :checked="values.bundleItems?.some(p => p.product_id === item.id)"
                     @change="toggleBundleItem(item.id, ($event.target as HTMLInputElement).checked)"
                     class="rounded border-gray-300 text-primary focus:ring-primary"
                   />
@@ -552,14 +713,14 @@ const isLoading = computed(() => suppliersLoading.value || taxesLoading.value)
         </div>
 
         <div class="flex justify-end space-x-2">
-          <Button type="button" variant="outline" @click="resetForm">
+          <Button type="button" variant="outline" @click="handleReset" :disabled="isSubmitting">
             Reset
           </Button>
-          <Button type="submit" :disabled="isLoading">
-            <span v-if="isLoading" class="mr-2">
+          <Button type="submit" :disabled="isSubmitting || isInitializing">
+            <span v-if="isSubmitting" class="mr-2">
               <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
             </span>
-            Simpan
+            {{ isSubmitting ? 'Menyimpan...' : 'Simpan' }}
           </Button>
         </div>
       </form>

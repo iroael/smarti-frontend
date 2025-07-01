@@ -15,7 +15,7 @@ defineProps<{
     >
       <!-- Background Image -->
       <img
-        src="/login-page.avif"
+        src="/back_logo.jpg"
         alt="Background"
         class="absolute inset-0 h-full w-full object-cover z-0"
       />

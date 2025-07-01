@@ -86,9 +86,10 @@ export const columns = (onDeleteSuccess: () => void): ColumnDef<Supplier>[] => [
     enableSorting: false,
     enableHiding: false,
   },
+  
   {
     id: 'supplier_info',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Supplier Information' }),
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Nama Mitra Bisnis' }),
     cell: ({ row }) => {
       const supplier = row.original
       const name = supplier.name || '-'
@@ -96,37 +97,34 @@ export const columns = (onDeleteSuccess: () => void): ColumnDef<Supplier>[] => [
       const email = supplier.email || '-'
       const initials = getInitials(name)
       const avatarColor = getAvatarColor(name)
-      
-      return h('div', { class: 'flex items-center gap-3 max-w-[320px]' }, [
+
+      return h('div', { class: 'flex items-center gap-3 max-w-[250px]' }, [
         // Avatar with random image and initials fallback
-        h(Avatar, { class: 'h-9 w-9 flex-shrink-0' }, [
-          h(AvatarImage, { 
+        /*h(Avatar, { class: 'h-9 w-9 flex-shrink-0' }, [
+          h(AvatarImage, {
             src: getRandomAvatar(name, supplier.id),
             alt: name
           }),
-          h(AvatarFallback, { 
+          h(AvatarFallback, {
             class: `${avatarColor} text-white text-xs font-semibold`
           }, initials)
-        ]),
+        ]), */
         h('div', { class: 'space-y-1 min-w-0 flex-1' }, [
+                  // Supplier Name
+                  h('div', {
+            class: 'font-semibold text-sm text-gray-900 truncate',
+            title: name
+          }, name),
           // Supplier Code with enhanced styling
           h('div', { class: 'flex items-center gap-2' }, [
-            h(Badge, { 
+            h(Badge, {
               variant: 'secondary',
               class: 'text-xs font-mono bg-blue-50 text-blue-700 border-blue-200 px-2 py-0.5'
             }, supplierCode),
           ]),
-          // Supplier Name
-          h('div', { 
-            class: 'font-semibold text-sm text-gray-900 truncate',
-            title: name
-          }, name),
+
           // Email with better hover state
-          h('div', { 
-            class: 'text-xs text-gray-500 hover:text-blue-600 cursor-pointer transition-colors duration-200 truncate',
-            onClick: () => window.open(`mailto:${email}`, '_blank'),
-            title: email
-          }, email)
+
         ])
       ])
     },
@@ -134,150 +132,155 @@ export const columns = (onDeleteSuccess: () => void): ColumnDef<Supplier>[] => [
       const nameA = rowA.original.name || ''
       const nameB = rowB.original.name || ''
       return nameA.localeCompare(nameB)
-    },
+    },    
   },
   {
-    id: 'contact_info',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Contact Info' }),
+    id: 'kategori',
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Kategori' }),
     cell: ({ row }) => {
-      const supplier = row.original
-      const phone = supplier.phone || '-'
-      const address = supplier.address || '-'
-      const formattedPhone = formatPhoneNumber(phone)
-      
-      return h('div', { class: 'space-y-2 max-w-[200px]' }, [
-        // Phone with better styling
-        h('div', { 
-          class: 'text-sm font-mono text-gray-700 hover:text-blue-600 cursor-pointer transition-colors duration-200 flex items-center gap-1',
-          onClick: () => window.open(`tel:${phone}`, '_blank'),
-          title: `Call ${phone}`
-        }, [
-          h('span', { class: 'text-gray-400' }, '📞'),
-          formattedPhone
-        ]),
-        // Address with better truncation
-        h('div', { 
-          class: 'text-xs text-gray-500 line-clamp-2 leading-relaxed',
-          title: address
-        }, address),
+            const supplier = row.original
+            const ktg = supplier.kategori || '-'
+            
+            return h('div', { class: 'space-y-2 max-w-[200px]' }, [
+              h('div', { class: 'space-y-1 min-w-0 flex-1' }, [
+      h('div', { class: 'flex items-center gap-2' }, [
+        h(Badge, {
+          variant: 'secondary',
+          class: 'text-xs font-mono bg-blue-50 text-blue-700 border-blue-200 px-2 py-0.5'
+        }, ktg)
       ])
-    },
-  },
-  {
-    id: 'bank_info',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Bank Info' }),
-    cell: ({ row }) => {
-      const supplier = row.original
-      const bankAccounts = supplier.bankAccounts || []
-      const primaryBank = bankAccounts.find(bank => bank.isPrimary)
-      
-      if (!primaryBank) {
-        return h('div', { class: 'text-center py-2' }, [
-          h(Badge, { variant: 'outline', class: 'text-xs text-gray-400' }, 'No Bank Info')
-        ])
-      }
-      
-      return h('div', { class: 'space-y-1.5' }, [
-        // Bank name with icon
-        h('div', { class: 'flex items-center gap-1' }, [
-          h('span', { class: 'text-gray-400 text-xs' }, '🏦'),
-          h('span', { class: 'text-xs font-semibold text-gray-700' }, primaryBank.bankName || '-')
-        ]),
-        // Account number
-        h('div', { class: 'text-xs text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded' }, 
-          primaryBank.accountNumber ? `****${primaryBank.accountNumber.slice(-4)}` : '-'
-        ),
-        // Account holder name
-        h('div', { class: 'text-xs text-gray-500 truncate max-w-[140px]' }, 
-          primaryBank.accountName || '-'
-        )
-      ])
-    },
-    enableSorting: false,
+              ])
+            ])
+
+                    
+    }
   },
   {
     id: 'tax_info',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Tax Info (NPWP)' }),
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'NPWP' }),
     cell: ({ row }) => {
       const supplier = row.original
       const taxIdentifications = supplier.taxIdentifications || []
       const npwp = taxIdentifications.find(tax => tax.taxType === 'npwp')
-      
+
       if (!npwp) {
         return h('div', { class: 'text-center py-2' }, [
           h(Badge, { variant: 'outline', class: 'text-xs text-gray-400' }, 'No NPWP')
         ])
       }
-      
+
       return h('div', { class: 'space-y-1.5' }, [
         // NPWP status and number
-        h(Badge, { 
+        h(Badge, {
           variant: npwp.isActive ? 'default' : 'secondary',
           class: `text-xs font-mono ${npwp.isActive ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-600'}`
         }, npwp.taxNumber || '-'),
-        // Tax holder name
-        h('div', { class: 'text-xs text-gray-500 truncate max-w-[120px]' }, 
-          npwp.taxName || '-'
-        ),
-        // Active status indicator
-        npwp.isActive && h('div', { class: 'flex items-center gap-1' }, [
-          h('span', { class: 'w-2 h-2 bg-green-500 rounded-full' }),
-          h('span', { class: 'text-xs text-green-600 font-medium' }, 'Active')
-        ])
       ])
     },
     enableSorting: false,
   },
+
   {
-    accessorKey: 'created_at',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Created Date' }),
-    cell: ({ row }) => {
-      const createdAt = row.getValue('created_at')
-      if (!createdAt) return h('span', { class: 'text-gray-400' }, '-')
+      id: 'Email Pajak',
+      header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Email Fraktur Pajak' }),
+      cell: ({ row }) => {
+      const supplier = row.original
+      const emailx = supplier.email || '-'
       
-      const date = new Date(createdAt)
-      const now = new Date()
-      const diffTime = Math.abs(now.getTime() - date.getTime())
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      
-      let relativeTime = ''
-      let timeClass = 'text-gray-500'
-      
-      if (diffDays === 0) {
-        relativeTime = 'Today'
-        timeClass = 'text-green-600'
-      } else if (diffDays === 1) {
-        relativeTime = 'Yesterday'
-        timeClass = 'text-blue-600'
-      } else if (diffDays <= 7) {
-        relativeTime = `${diffDays} days ago`
-        timeClass = 'text-blue-600'
-      } else if (diffDays <= 30) {
-        relativeTime = `${Math.ceil(diffDays / 7)} weeks ago`
-      } else {
-        relativeTime = `${Math.ceil(diffDays / 30)} months ago`
-      }
-      
-      return h('div', { class: 'space-y-1' }, [
-        h('div', { class: 'text-sm font-medium text-gray-900' }, 
-          date.toLocaleDateString('en-US', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-          })
-        ),
-        h('div', { class: `text-xs ${timeClass} font-medium` }, relativeTime)
+      return h('div', { class: 'space-y-1.5' }, [
+        h('div', {
+          class: 'text-xs text-gray-500 hover:text-blue-600 cursor-pointer transition-colors duration-200 truncate',
+          onClick: () => window.open(`mailto:${email}`, '_blank'),
+          title: emailx
+        }, emailx)
       ])
-    },
-    sortingFn: (rowA, rowB) => {
-      const dateA = new Date(rowA.original.created_at || 0)
-      const dateB = new Date(rowB.original.created_at || 0)
-      return dateB.getTime() - dateA.getTime() // Most recent first
-    },
+      }
+  },
+  
+  {
+    id: 'conectApiA',
+        header: ({ column }) => h(DataTableColumnHeader, { column, title: 'API Accurate' }),
+        cell: ({ row }) => {
+        const supplier = row.original
+        const accurateID = supplier.accurate_id || '-'
+        const astat = supplier.astat || '-'
+        const accurateSecret = supplier.accurate_sc || '-'
+    if(astat){var astat_data = 'Aktif'}else{ var astat_data = 'Suspend'}
+        
+
+        return h('div', { class: 'space-y-1.5' }, [
+        // Accurate
+        h('div', { class: 'flex items-center gap-1' }, [
+                  h('span', { class: 'text-blue-700 text-xs font-semibold' }, [
+            h('img', {
+              src:'/response.png',
+              alt:'API',
+              style: { width: '20px' }
+            })
+          ]),
+          h('span', { class: 'text-xs font-semibold text-red-700' }, 'Accurate'),
+                  h('span', { class: 'text-xs font-semibold' }, 'Status:'),
+                  h('span', { class: `text-xs font-mono ${astat ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-600'}`}, astat_data)
+
+        ]),
+                
+        // accurate ID
+                 h('div', { class: 'flex items-center gap-1' }, [
+          h('span', { class: 'text-blue-700 text-xs font-semibold' }, 'ID'),
+          h('span', { class: 'text-xs text-green-500 font-mono bg-gray-50 px-2 py-1 rounded' },accurateID)
+        ]),
+                // accurate secret
+                 h('div', { class: 'flex items-center gap-1' }, [
+          h('span', { class: 'text-blue-700 text-xs font-semibold' }, 'Secret'),
+          h('span', { class: 'text-xs text-green-500 font-mono bg-gray-50 px-2 py-1 rounded' },accurateSecret)
+        ])
+                
+      ])
+        }
+  },
+
+    {
+        id: 'conectApiX',
+        header: ({ column }) => h(DataTableColumnHeader, { column, title: 'API Xendit' }),
+        cell: ({ row }) => {
+        const supplier = row.original
+        const xenditID = supplier.xendit_id || '-'
+        const xenditSecret = supplier.xendit_sc || '-'
+    const xstat = supplier.xstat || '-'
+    if(xstat){var xstat_data = 'Aktif'}else{ var xstat_data = 'Suspend'}
+
+
+        return h('div', { class: 'space-y-1.5' }, [
+        // Xendit
+         h('div', { class: 'flex items-center gap-1' }, [
+          h('span', { class: 'text-blue-700 text-xs font-semibold' }, [
+            h('img', {
+              src:'/response.png',
+              alt:'API',
+              style: { width: '20px' }
+
+            })
+          ]),
+          h('span', { class: 'text-xs font-semibold text-blue-700' }, 'Xendit'),
+                  h('span', { class: 'text-xs font-semibold' }, 'Status:'),
+                  h('span', { class: `text-xs font-mono ${xstat ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-600'}`}, xstat_data)
+        ]),
+                // Xendit ID
+                 h('div', { class: 'flex items-center gap-1' }, [
+          h('span', { class: 'text-blue-700 text-xs font-semibold' }, 'ID'),
+          h('span', { class: 'text-xs text-green-500 font-mono bg-gray-50 px-2 py-1 rounded' },xenditID)
+        ]),
+                // Xendit secret
+                 h('div', { class: 'flex items-center gap-1' }, [
+          h('span', { class: 'text-blue-700 text-xs font-semibold' }, 'Secret'),
+          h('span', { class: 'text-xs text-green-500 font-mono bg-gray-50 px-2 py-1 rounded' },xenditSecret)
+        ])
+      ])
+        }
   },
   {
     id: 'actions',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Actions' }),
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Aksi' }),
     cell: ({ row }) =>
       h(DataTableRowActions, {
         row,

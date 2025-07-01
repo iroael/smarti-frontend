@@ -126,7 +126,7 @@ export const navMenu: NavMenu[] = [
 
   // PRODUCT
   {
-    // heading: 'Product',
+    heading: 'Product',
     roles: ['admin', 'supplier'],
     items: [
       {
@@ -135,21 +135,21 @@ export const navMenu: NavMenu[] = [
         roles: ['admin'],
         children: [
           {
+            title: 'Bundling',
+            icon: 'i-lucide-package-plus',
+            link: '/product/bundling',
+            roles: ['admin'],
+          },
+          {
             title: 'Item',
             icon: 'i-lucide-box',
             link: '/product/item',
             roles: ['admin'],
           },
           {
-            title: 'Rakitan',
-            icon: 'i-lucide-cube',
-            link: '/product/rakitan',
-            roles: ['admin'],
-          },
-          {
-            title: 'Bundling',
-            icon: 'i-lucide-package-plus',
-            link: '/product/bundling',
+            title: 'Master Harga',
+            icon: 'i-lucide-percent',
+            link: '/product/price',
             roles: ['admin'],
           },
           {
@@ -165,30 +165,55 @@ export const navMenu: NavMenu[] = [
 
   // PURCHASING
   {
-    // heading: 'Pembelian',
+    heading: 'Transaksi',
     roles: ['admin'],
     items: [
       {
         title: 'Pembelian',
-        icon: 'i-lucide-lock-keyhole-open',
+        icon: 'i-lucide-shopping-bag', // Ganti dari lock ke shopping bag
         roles: ['admin'],
         children: [
           {
             title: 'Pesanan Pembelian',
-            icon: 'i-lucide-file-plus',
+            icon: 'i-lucide-file-plus', // Tetap, sudah sesuai
             link: '/purchase-orders',
             roles: ['admin'],
           },
           {
             title: 'Penerimaan Barang',
-            icon: 'i-lucide-truck',
+            icon: 'i-lucide-package-check', // Ganti ke package-check agar lebih jelas
             link: '/goods-receipt',
             roles: ['admin'],
           },
           {
-            title: 'Transansaksi Pembelian',
-            icon: 'i-lucide-file-text',
+            title: 'Transaksi Pembelian',
+            icon: 'i-lucide-receipt', // Lebih menggambarkan transaksi
             link: '/purchase-transactions',
+            roles: ['admin'],
+          },
+        ],
+      },
+      {
+        title: 'Penjualan',
+        icon: 'i-lucide-hand-coins', // Ganti dari lock ke hand-coins agar relevan dengan penjualan
+        roles: ['admin'],
+        children: [
+          {
+            title: 'Pesanan Jual',
+            icon: 'i-lucide-shopping-cart', // Tetap, sudah sesuai
+            link: '/orders',
+            roles: ['admin'],
+          },
+          {
+            title: 'Pengiriman',
+            icon: 'i-lucide-truck', // Ganti dari send ke truck untuk konsistensi dengan logistik
+            link: '/delivery',
+            roles: ['admin'],
+          },
+          {
+            title: 'Transaksi Penjualan',
+            icon: 'i-lucide-receipt', // Sama seperti pembelian, untuk menggambarkan transaksi
+            link: '/sales-transactions',
             roles: ['admin'],
           },
         ],
@@ -196,31 +221,6 @@ export const navMenu: NavMenu[] = [
     ],
   },
 
-  // SALES
-  {
-    heading: 'Penjualan',
-    roles: ['admin'],
-    items: [
-      {
-        title: 'Pesanan Jual',
-        icon: 'i-lucide-shopping-cart',
-        link: '/orders',
-        roles: ['admin'],
-      },
-      {
-        title: 'Pengiriman',
-        icon: 'i-lucide-send',
-        link: '/delivery',
-        roles: ['admin'],
-      },
-      {
-        title: 'Transaksi Penjualan',
-        icon: 'i-lucide-file-text',
-        link: '/sales-transactions',
-        roles: ['admin'],
-      },
-    ],
-  },
 
   // SYNC
   {

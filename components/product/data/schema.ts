@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
-// Tax/Pajak Schema
+/* ================================
+ * Tax / Pajak Schema
+ * ================================ */
 const taxSchema = z.object({
   id: z.number(),
   name: z.string(),
@@ -11,7 +13,9 @@ const taxSchema = z.object({
   created_at: z.string(),
 })
 
-// Harga
+/* ================================
+ * Harga
+ * ================================ */
 const priceSchema = z.object({
   id: z.number(),
   dpp_beli: z.string().transform(Number),
@@ -20,7 +24,9 @@ const priceSchema = z.object({
   created_at: z.string(),
 })
 
-// Supplier
+/* ================================
+ * Supplier
+ * ================================ */
 const supplierSchema = z.object({
   id: z.number(),
   name: z.string(),
@@ -31,7 +37,9 @@ const supplierSchema = z.object({
   created_at: z.string(),
 })
 
-// Produk sederhana (untuk bundleItems)
+/* ================================
+ * Produk Sederhana (untuk bundle item)
+ * ================================ */
 const simpleProductSchema = z.object({
   id: z.number(),
   product_code: z.string(),
@@ -45,14 +53,18 @@ const simpleProductSchema = z.object({
   tax: taxSchema.optional(),
 })
 
-// Item di dalam bundle
+/* ================================
+ * Bundle Item
+ * ================================ */
 const bundleItemSchema = z.object({
   id: z.number(),
   quantity: z.number(),
   product: simpleProductSchema,
 })
 
-// Produk lengkap
+/* ================================
+ * Produk Lengkap
+ * ================================ */
 export const productSchema = z.object({
   id: z.number(),
   product_code: z.string(),
@@ -60,23 +72,35 @@ export const productSchema = z.object({
   description: z.string().nullable(),
   stock: z.number(),
   is_bundle: z.boolean(),
-  inventory_type: z.string(),
-  created_at: z.string(),
+  inventory_type: z.enum(['stock', 'service', 'digital']),
   supplier: supplierSchema,
   tax: taxSchema.optional(),
   prices: z.array(priceSchema),
   bundleItems: z.array(bundleItemSchema).optional().default([]),
+  weight: z.number().nullable().optional(),
+  length: z.number().nullable().optional(),
+  height: z.number().nullable().optional(),
+  width: z.number().nullable().optional(),
+  dimension: z.string().nullable().optional(),
 })
 
-// Product form schema untuk validasi form
+/* ================================
+ * Product Form Schema
+ * ================================ */
 export const productFormSchema = z.object({
   product_code: z.string().min(1, 'Kode produk wajib diisi'),
   name: z.string().min(1, 'Nama produk wajib diisi'),
-  description: z.string().min(1, 'Deskripsi wajib diisi'),
-  stock: z.number().min(0, 'Stok tidak boleh negatif'),
+  description: z.string().nullable(),
+  inventory_type: z.enum(['stock', 'service', 'digital']),
+  stock: z.number().min(0, 'Stok tidak boleh negatif').optional(),
   is_bundle: z.boolean(),
   supplier_id: z.number().min(1, 'Supplier wajib dipilih'),
-  tax_id: z.number().min(1, 'Pajak wajib dipilih'),
+  tax_id: z.number().min(1, 'Pajak wajib dipilih').optional(),
+  weight: z.number().min(0, 'Berat harus 0 atau lebih').optional(),
+  length: z.number().min(0, 'Panjang harus 0 atau lebih').optional(),
+  width: z.number().min(0, 'Tinggi harus 0 atau lebih').optional(),
+  height: z.number().min(0, 'Tinggi harus 0 atau lebih').optional(),
+  dimension: z.string().optional(),
   price: z.object({
     dpp_beli: z.number().min(0, 'DPP Beli harus 0 atau lebih'),
     dpp_jual: z.number().min(0, 'DPP Jual harus 0 atau lebih'),
@@ -86,25 +110,38 @@ export const productFormSchema = z.object({
     product_id: z.number(),
     quantity: z.number().min(1, 'Quantity minimal 1'),
   })).optional(),
+}).superRefine((data, ctx) => {
+  if (data.inventory_type !== 'stock' && (data.stock ?? 0) > 0) {
+    ctx.addIssue({
+      path: ['stock'],
+      code: z.ZodIssueCode.custom,
+      message: 'Stock harus 0 untuk tipe service atau digital',
+    })
+  }
 })
 
-// Tax List response
-export const taxListSchema = z.object({
-  data: z.array(taxSchema),
-})
-
-// List response
+/* ================================
+ * List Response Schema
+ * ================================ */
 export const productListSchema = z.object({
   data: z.array(productSchema),
 })
 
-// Type exports
+export const taxListSchema = z.object({
+  data: z.array(taxSchema),
+})
+
+/* ================================
+ * Types
+ * ================================ */
 export type Product = z.infer<typeof productSchema>
+export type ProductForm = z.infer<typeof productFormSchema>
 export type BundleItem = z.infer<typeof bundleItemSchema>
 export type Tax = z.infer<typeof taxSchema>
-export type ProductForm = z.infer<typeof productFormSchema>
 
-// Optional parse helpers
+/* ================================
+ * Parse Helpers
+ * ================================ */
 export const parseProductList = (input: unknown): Product[] => {
   return productListSchema.parse(input).data
 }

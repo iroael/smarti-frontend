@@ -5,24 +5,18 @@ import { useProducts } from '@/composables/useProducts'
 import { computed, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 
-const { products, bundleProducts, loading, fetchBundleProducts, fetchProductsByRole } = useProducts()
+const { bundleProducts, loading, fetchBundleProducts } = useProducts()
 const authStore = useAuthStore()
 
-// Computed property untuk menentukan role user
-const isCustomer = computed(() => {
-  return authStore.user?.role === 'customer'
-})
-
-const isAdmin = computed(() => {
-  return authStore.user?.role === 'admin'
-})
+// Cek role
+const isCustomer = computed(() => authStore.user?.role === 'customer')
+const isAdmin = computed(() => authStore.user?.role === 'admin')
 
 onMounted(async () => {
   await fetchBundleProducts()
-console.log('bundleProducts', bundleProducts)
 })
 
-// Handler dipanggil saat 1 produk berhasil dihapus
+// Handler untuk delete success
 const handleDeleteSuccess = async () => {
   await fetchBundleProducts()
 }
@@ -36,14 +30,15 @@ const handleDeleteSuccess = async () => {
           {{ isCustomer ? 'Available Bundles' : 'Bundle Products' }}
         </h2>
         <p class="text-muted-foreground">
-          {{ isCustomer
-            ? "Here's a list of available product bundles for you." 
-            : "Here's a list of available products and bundles."
+          {{
+            isCustomer
+              ? "Here's a list of available product bundles for you." 
+              : "Here's a list of available products and bundles."
           }}
         </p>
       </div>
 
-      <!-- Hanya tampilkan tombol Add Product jika admin -->
+      <!-- Tombol tambah product (hanya admin) -->
       <NuxtLink v-if="isAdmin" to="/product/create?type=bundling">
         <button class="bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700 transition">
           + Add Product
@@ -51,7 +46,7 @@ const handleDeleteSuccess = async () => {
       </NuxtLink>
     </div>
 
-    <!-- Loading State -->
+    <!-- Loading -->
     <div v-if="loading" class="text-center py-8 text-muted-foreground">
       <div class="inline-flex items-center gap-2">
         <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -59,22 +54,28 @@ const handleDeleteSuccess = async () => {
       </div>
     </div>
 
-    <!-- Admin View - DataTable -->
+    <!-- Admin View -->
     <DataTable
       v-else-if="isAdmin"
       :data="bundleProducts"
-      :columns="columns(handleDeleteSuccess)"
+      :columns="columns(handleDeleteSuccess, { viewType: 'bundling' })"
     />
 
-    <!-- Empty State for Admin -->
-    <div v-if="!loading && bundleProducts.length === 0 && isAdmin" class="text-center py-12 text-muted-foreground">
+    <!-- Empty state -->
+    <div
+      v-if="!loading && bundleProducts.length === 0 && isAdmin"
+      class="text-center py-12 text-muted-foreground"
+    >
       <div class="text-6xl mb-4">📋</div>
       <p class="text-xl font-medium mb-2">No products found</p>
       <p class="text-sm">Start by adding your first product.</p>
     </div>
 
-    <!-- Fallback for other roles -->
-    <div v-if="!loading && !isAdmin && !isCustomer" class="text-center py-12 text-muted-foreground">
+    <!-- Fallback untuk role lain -->
+    <div
+      v-if="!loading && !isAdmin && !isCustomer"
+      class="text-center py-12 text-muted-foreground"
+    >
       <div class="text-6xl mb-4">🔒</div>
       <p class="text-xl font-medium mb-2">Access Restricted</p>
       <p class="text-sm">You don't have permission to view this content.</p>

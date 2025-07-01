@@ -4,17 +4,29 @@ import DataTable from '@/components/product/components/DataTable.vue'
 import { useProducts } from '@/composables/useProducts'
 import { computed, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
+import { useRoute } from 'vue-router'
 
+// Composables
+const route = useRoute()
 const { nonBundleProducts, loading, fetchProductNonBundle } = useProducts()
 const authStore = useAuthStore()
 
+// Role Computed
 const isCustomer = computed(() => authStore.user?.role === 'customer')
 const isAdmin = computed(() => authStore.user?.role === 'admin')
+
+// Detect view type from URL
+const viewType = computed(() => {
+  if (route.path.includes('/product/price')) return 'price'
+  if (route.path.includes('/product/bundling')) return 'bundling'
+  return 'item'
+})
 
 onMounted(async () => {
   await fetchProductNonBundle()
 })
 
+// Refresh handler after delete
 const handleDeleteSuccess = async () => {
   await fetchProductNonBundle()
 }
@@ -25,17 +37,17 @@ const handleDeleteSuccess = async () => {
     <div class="flex flex-wrap items-end justify-between gap-2">
       <div>
         <h2 class="text-2xl font-bold tracking-tight">
-          {{ isCustomer ? 'Available Bundles' : 'Products' }}
+          {{ isCustomer ? 'Available ' : 'Master Harga' }}
         </h2>
         <p class="text-muted-foreground">
-          {{
-            isCustomer
-              ? "Here's a list of available product bundles for you." 
-              : "Here's a list of available products and bundles."
+          {{ isCustomer
+            ? "Here's a list of available product bundles for you." 
+            : "Here's a list of available products and bundles."
           }}
         </p>
       </div>
 
+      <!-- Admin only: Add product -->
       <NuxtLink v-if="isAdmin" to="/product/create?type=nonbundling">
         <button class="bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700 transition">
           + Add Product
@@ -51,14 +63,14 @@ const handleDeleteSuccess = async () => {
       </div>
     </div>
 
-    <!-- Data Table untuk Admin -->
+    <!-- Admin DataTable -->
     <DataTable
       v-else-if="isAdmin"
       :data="nonBundleProducts"
-      :columns="columns(handleDeleteSuccess, { viewType: 'item' })"
+      :columns="columns(handleDeleteSuccess, { role: authStore.user?.role, viewType })"
     />
 
-    <!-- Empty state untuk Admin -->
+    <!-- Empty state -->
     <div
       v-if="!loading && nonBundleProducts.length === 0 && isAdmin"
       class="text-center py-12 text-muted-foreground"
@@ -68,7 +80,7 @@ const handleDeleteSuccess = async () => {
       <p class="text-sm">Start by adding your first product.</p>
     </div>
 
-    <!-- Fallback Role -->
+    <!-- Fallback role -->
     <div
       v-if="!loading && !isAdmin && !isCustomer"
       class="text-center py-12 text-muted-foreground"
