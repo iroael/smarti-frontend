@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import AddCustomerModal from '@/components/customers/components/AddCustomerModal.vue'
 import { columns } from '@/components/customers/components/columns'
 import DataTable from '@/components/customers/components/DataTable.vue'
 import { useCustomers } from '@/composables/useCustomers'
+import { ref } from 'vue'
 
 // Ambil data & methods dari composable
 const { customers, loading: isLoading, error, fetchCustomers, createCustomer } = useCustomers()
@@ -42,7 +42,7 @@ const handleDeleteSuccess = async () => {
           Pengembang Rumah Subsidi
         </h2>
         <p class="text-muted-foreground">
-          Here’s a list of all registered pengembang rumah subsidi.
+          Berikut daftar semua pengembang rumah subsidi yang terdaftar.
         </p>
       </div>
       <Button variant="default" @click="showAddModal = true">

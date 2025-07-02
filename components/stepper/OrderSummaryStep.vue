@@ -437,6 +437,7 @@ const getAddressTypeLabel = (type: string) => {
 
 // Navigation handlers
 const handleEditStep = (step: number) => {
+  console.log('step', step)
   emit('edit-step', step)
 }
 
@@ -900,7 +901,7 @@ onMounted(() => {
                       </div>
                       <div class="flex-1 min-w-0">
                         <h4 class="font-semibold text-gray-900 truncate">
-                          {{ item.product?.nm_produk || `Produk ID: ${item.productId}` }}
+                          {{ item.product?.name || `Produk ID: ${item.productId}` }}
                         </h4>
                         <div class="flex items-center gap-4 mt-1">
                           <span class="text-sm text-gray-600">
@@ -913,7 +914,7 @@ onMounted(() => {
                             variant="outline"
                             class="bg-blue-50 text-blue-700 border-blue-200 text-xs"
                           >
-                            ID: {{ item.productId }}
+                            ID: {{ item.product.product_code }}
                           </Badge>
                         </div>
                       </div>

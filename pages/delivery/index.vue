@@ -53,7 +53,7 @@ const refreshData = async () => {
     <div class="flex flex-wrap items-end justify-between gap-2">
       <div>
         <h2 class="text-2xl font-bold tracking-tight">
-          Delivery Management
+          Pengiriman
         </h2>
         <p class="text-muted-foreground">
           Kelola dan pantau status pengiriman pesanan Anda

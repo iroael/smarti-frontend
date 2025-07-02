@@ -40,6 +40,16 @@ const handleDelete = async () => {
     isDeleting.value = false
   }
 }
+
+const goToDetail = () => {
+  // Gunakan id dari data yang ada
+  const customerId = customer.value.id
+  if (customerId) {
+    router.push(`/customers/${customerId}/view`)
+  } else {
+    console.error('No order ID found')
+  }
+}
 </script>
 
 <template>
@@ -54,9 +64,11 @@ const handleDelete = async () => {
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" class="w-[160px]">
+      <DropdownMenuItem @click="goToDetail">
+        View
+      </DropdownMenuItem>
       <DropdownMenuItem @click="handleDelete">
         Delete
-        <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

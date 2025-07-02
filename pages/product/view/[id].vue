@@ -235,42 +235,65 @@ function editProduct() {
             <p class="text-muted-foreground leading-relaxed bg-muted/30 p-4 rounded-lg">
               {{ product.description || 'Tidak ada deskripsi tersedia untuk produk ini.' }}
             </p>
+            
+            <!-- Spesifikasi Produk -->
+            <div class="mt-6">
+              <h4 class="text-sm font-semibold flex items-center gap-2 mb-3">
+                <Icon name="i-lucide-ruler" class="w-4 h-4 text-primary" />
+                Spesifikasi & Dimensi
+              </h4>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Berat -->
+                <div class="bg-muted/20 p-3 rounded-lg">
+                  <div class="flex items-center gap-2 mb-1">
+                    <Icon name="i-lucide-weight" class="w-3 h-3 text-muted-foreground" />
+                    <span class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Berat</span>
+                  </div>
+                  <span class="text-sm font-semibold">{{ product.weight || '-' }} kg</span>
+                </div>
+                
+                <!-- Panjang -->
+                <div class="bg-muted/20 p-3 rounded-lg">
+                  <div class="flex items-center gap-2 mb-1">
+                    <Icon name="i-lucide-move-horizontal" class="w-3 h-3 text-muted-foreground" />
+                    <span class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Panjang</span>
+                  </div>
+                  <span class="text-sm font-semibold">{{ product.length || '-' }} cm</span>
+                </div>
+                
+                <!-- Lebar -->
+                <div class="bg-muted/20 p-3 rounded-lg">
+                  <div class="flex items-center gap-2 mb-1">
+                    <Icon name="i-lucide-move-vertical" class="w-3 h-3 text-muted-foreground" />
+                    <span class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Lebar</span>
+                  </div>
+                  <span class="text-sm font-semibold">{{ product.width || '-' }} cm</span>
+                </div>
+                
+                <!-- Tinggi -->
+                <div class="bg-muted/20 p-3 rounded-lg">
+                  <div class="flex items-center gap-2 mb-1">
+                    <Icon name="i-lucide-arrow-up" class="w-3 h-3 text-muted-foreground" />
+                    <span class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tinggi</span>
+                  </div>
+                  <span class="text-sm font-semibold">{{ product.height || '-' }} cm</span>
+                </div>
+              </div>
+              
+              <!-- Dimensi Gabungan -->
+              <div class="mt-4 bg-muted/20 p-3 rounded-lg">
+                <div class="flex items-center gap-2 mb-1">
+                  <Icon name="i-lucide-box" class="w-3 h-3 text-muted-foreground" />
+                  <span class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Dimensi Keseluruhan</span>
+                </div>
+                <span class="text-sm font-semibold">
+                  {{ product.length || '-' }} × {{ product.width || '-' }} × {{ product.height || '-' }} cm
+                </span>
+              </div>
+            </div>
           </div>
-
           <Separator />
-
-          <!-- Pricing Summary -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="border rounded-lg p-4 flex flex-col items-center">
-              <div class="flex items-center gap-2 mb-2">
-                <Icon name="i-lucide-arrow-down-circle" class="w-5 h-5 text-blue-600" />
-                <span class="text-sm font-medium text-blue-600">DPP Beli Vendor</span>
-              </div>
-              <p class="text-xl font-bold text-blue-700">
-                {{ formatCurrency(product.prices?.[0]?.dpp_beli) }}
-              </p>
-            </div>
-            
-            <div class="border rounded-lg p-4 flex flex-col items-center">
-              <div class="flex items-center gap-2 mb-2">
-                <Icon name="i-lucide-tag" class="w-5 h-5 text-green-600" />
-                <span class="text-sm font-medium text-green-600">DPP Jual KSS</span>
-              </div>
-              <p class="text-xl font-bold text-green-700">
-                {{ formatCurrency(product.prices?.[0]?.dpp_jual) }}
-              </p>
-            </div>
-            
-            <div class="border rounded-lg p-4 flex flex-col items-center bg-primary/5">
-              <div class="flex items-center gap-2 mb-2">
-                <Icon name="i-lucide-trending-up" class="w-5 h-5 text-primary" />
-                <span class="text-sm font-medium text-primary">Harga Jual PLNE</span>
-              </div>
-              <p class="text-2xl font-bold text-primary">
-                {{ formatCurrency(product.prices?.[0]?.h_jual_b) }}
-              </p>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
@@ -372,59 +395,6 @@ function editProduct() {
           </CardContent>
         </Card>
       </div>
-
-      <!-- Profit Analysis -->
-      <Card v-if="profitAnalysis">
-        <CardHeader>
-          <CardTitle class="flex items-center gap-2">
-            <Icon name="i-lucide-line-chart" class="w-5 h-5 text-primary" />
-            Analisis Profit
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="border rounded-lg p-4">
-              <div class="flex items-center gap-2 mb-2">
-                <Icon name="i-lucide-arrow-up-down" class="w-4 h-4 text-green-600" />
-                <span class="text-sm font-medium">Margin Kotor</span>
-              </div>
-              <p class="text-xl font-bold text-green-700">
-                {{ formatCurrency(profitAnalysis.grossMargin) }}
-              </p>
-              <p class="text-xs text-muted-foreground mt-1">
-                ({{ profitAnalysis.marginPercentage }}% dari DPP Beli)
-              </p>
-            </div>
-            
-            <div class="border rounded-lg p-4">
-              <div class="flex items-center gap-2 mb-2">
-                <Icon name="i-lucide-badge-percent" class="w-4 h-4 text-purple-600" />
-                <span class="text-sm font-medium">Total Pajak</span>
-              </div>
-              <p class="text-xl font-bold text-purple-700">
-                {{ formatCurrency((taxDetails?.ppn?.amount || 0) + (taxDetails?.pph?.amount || 0)) }}
-              </p>
-              <p class="text-xs text-muted-foreground mt-1">
-                (PPN + PPh)
-              </p>
-            </div>
-            
-            <div class="border rounded-lg p-4 bg-green-50">
-              <div class="flex items-center gap-2 mb-2">
-                <Icon name="i-lucide-wallet" class="w-4 h-4 text-primary" />
-                <span class="text-sm font-medium">Profit Bersih</span>
-              </div>
-              <p class="text-2xl font-bold text-primary">
-                {{ formatCurrency(profitAnalysis.netProfit) }}
-              </p>
-              <p class="text-xs text-muted-foreground mt-1">
-                (Setelah pajak)
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       <!-- Bundle Items -->
       <Card v-if="product.is_bundle && product.bundleItems?.length">
         <CardHeader>
@@ -450,9 +420,7 @@ function editProduct() {
             <div class="grid grid-cols-12 bg-muted/50 p-2 border-b text-xs">
               <div class="col-span-1 font-medium text-muted-foreground">#</div>
               <div class="col-span-4 font-medium text-muted-foreground">Produk</div>
-              <div class="col-span-2 font-medium text-muted-foreground text-center">Qty</div>
-              <div class="col-span-2 font-medium text-muted-foreground text-right">DPP Beli</div>
-              <div class="col-span-3 font-medium text-muted-foreground text-right">Harga Jual</div>
+              <div class="col-span-6 font-medium text-muted-foreground text-center">Qty</div>
             </div>
             
             <div v-for="(item, i) in product.bundleItems" :key="item.id || i" class="grid grid-cols-12 p-2 border-b hover:bg-muted/30">
@@ -470,21 +438,10 @@ function editProduct() {
                   </div>
                 </div>
               </div>
-              <div class="col-span-2 flex justify-center">
+              <div class="col-span-6 flex justify-center">
                 <Badge variant="outline" class="px-2 py-0.5 text-xs">
                   {{ item.quantity || 0 }}x
                 </Badge>
-              </div>
-              <div class="col-span-2 text-right text-sm font-medium">
-                {{ formatCurrency(item.product?.prices?.[0]?.dpp_beli) }}
-              </div>
-              <div class="col-span-3 text-right">
-                <p class="text-sm font-bold">{{ formatCurrency(item.product?.prices?.[0]?.h_jual_b) }}</p>
-                <p class="text-xs text-muted-foreground">
-                  Stok: <Badge :variant="Number(item.product?.stock || 0) <= 5 ? 'destructive' : 'outline'" class="px-1 py-0 text-xs">
-                    {{ item.product?.stock || 0 }}
-                  </Badge>
-                </p>
               </div>
             </div>
           </div>

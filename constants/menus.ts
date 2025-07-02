@@ -2,7 +2,7 @@
 import type { NavMenu, NavMenuItems } from '~/types/nav'
 
 export const navMenu: NavMenu[] = [
-  // CUSTOMER
+  // CUSTOMER DASHBOARD MENU
   {
     heading: 'Customer Dashboard',
     roles: ['customer'],
@@ -14,39 +14,63 @@ export const navMenu: NavMenu[] = [
         roles: ['customer'],
       },
       {
-        title: 'Buat Pesanan',
-        icon: 'i-lucide-package',
-        link: '/orders/new-create',
-        roles: ['customer'],
-      },
-      {
-        title: 'Pesanan Saya',
-        icon: 'i-lucide-package',
-        link: '/orders',
-        roles: ['customer'],
-      },
-      {
-        title: 'Perumahan Saya',
-        icon: 'i-lucide-package',
-        link: '/orders',
-        roles: ['customer'],
-      },
-      {
-        title: 'Faktur Saya',
-        icon: 'i-lucide-package',
-        link: '/faktur',
+        title: 'Proyek Perumahan',
+        icon: 'i-lucide-home',
+        link: '/projects',
         roles: ['customer'],
       },
     ],
   },
   {
-    heading: 'Smarti',
+    heading: 'Pemesanan',
+    roles: ['customer'],
+    items: [
+      {
+        title: 'Buat Pesanan Baru',
+        icon: 'i-lucide-shopping-cart',
+        link: '/orders/new-create',
+        roles: ['customer'],
+      },
+      {
+        title: 'Daftar Pesanan',
+        icon: 'i-lucide-list-ordered',
+        link: '/orders',
+        roles: ['customer'],
+      },
+      {
+        title: 'Lacak Pengiriman',
+        icon: 'i-lucide-truck',
+        link: '/delivery',
+        roles: ['customer'],
+      },
+    ],
+  },
+  {
+    heading: 'Keuangan',
+    roles: ['customer'],
+    items: [
+      {
+        title: 'Faktur & Tagihan',
+        icon: 'i-lucide-file-text',
+        link: '/invoices',
+        roles: ['customer'],
+      },
+    ],
+  },
+  {
+    heading: 'Smarti Solutions',
     roles: ['customer'],
     items: [
       {
         title: 'Pasang Smarti',
-        icon: 'i-lucide-building',
-        link: '/account',
+        icon: 'i-lucide-cpu',
+        link: '/smarti/install',
+        roles: ['customer'],
+      },
+      {
+        title: 'Layanan Smarti',
+        icon: 'i-lucide-settings',
+        link: '/smarti/services',
         roles: ['customer'],
       },
     ],
@@ -126,12 +150,12 @@ export const navMenu: NavMenu[] = [
 
   // PRODUCT
   {
-    heading: 'Product',
+    heading: 'Master',
     roles: ['admin', 'supplier'],
     items: [
       {
-        title: 'Master',
-        icon: 'i-lucide-lock-keyhole-open',
+        title: 'Produk',
+        icon: 'i-lucide-package',
         roles: ['admin'],
         children: [
           {
@@ -156,6 +180,25 @@ export const navMenu: NavMenu[] = [
             title: 'Tax',
             icon: 'i-lucide-percent',
             link: '/tax',
+            roles: ['admin'],
+          },
+        ],
+      },
+      {
+        title: 'SSO Sireng & Vendor',
+        icon: 'i-lucide-users',
+        roles: ['admin'],
+        children: [
+          {
+            title: 'SSO Sireng',
+            icon: 'i-lucide-users',
+            link: '/customers',
+            roles: ['admin'],
+          },
+          {
+            title: 'Vendor',
+            icon: 'i-lucide-truck',
+            link: '/suppliers',
             roles: ['admin'],
           },
         ],
@@ -221,7 +264,6 @@ export const navMenu: NavMenu[] = [
     ],
   },
 
-
   // SYNC
   {
     heading: 'Sinkronisasi',
@@ -257,26 +299,6 @@ export const navMenu: NavMenu[] = [
         title: 'Bank',
         icon: 'i-lucide-banknote',
         link: '/reconcile/bank',
-        roles: ['admin'],
-      },
-    ],
-  },
-
-  // MASTER
-  {
-    heading: 'Master',
-    roles: ['admin', 'supplier'],
-    items: [
-      {
-        title: 'SSO Sireng',
-        icon: 'i-lucide-users',
-        link: '/customers',
-        roles: ['admin'],
-      },
-      {
-        title: 'Vendor',
-        icon: 'i-lucide-truck',
-        link: '/suppliers',
         roles: ['admin'],
       },
     ],

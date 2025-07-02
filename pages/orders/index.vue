@@ -80,19 +80,12 @@ const totalValue = computed(() => {
     <div class="flex flex-wrap items-end justify-between gap-2">
       <div>
         <h2 class="text-2xl font-bold tracking-tight">
-          Sales Order
+          Pesanan Pembelian
         </h2>
         <p class="text-muted-foreground">
-          Here's a list of your sales orders!
+          Berikut adalah data pesanan pembelian!
         </p>
       </div>
-
-      <button
-        @click="goToCreate"
-        class="bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700 transition"
-      >
-        + Add Sales Order
-      </button>
     </div>
 
     <!-- Status Cards Section -->

@@ -50,7 +50,7 @@ const handleDelete = async () => {
     </DropdownMenuTrigger>
 
     <DropdownMenuContent align="end" class="w-[160px]">
-      <DropdownMenuItem @click="router.push(`/supplier/view/${supplier.id}`)">
+      <DropdownMenuItem @click="router.push(`/suppliers/${supplier.id}/view`)">
         View
       </DropdownMenuItem>
       <DropdownMenuItem @click="showDeleteDialog = true" class="text-red-500 focus:text-red-500">

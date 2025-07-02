@@ -209,13 +209,11 @@ const handleAddressSelection = async (address: any) => {
 
 // Handle address selection
 const selectAddress = async (addressId: number) => {
-  console.log('🎯 Address selected:', addressId)
   selectedAddressId.value = addressId
   const address = addresses.value.find(addr => addr.id === addressId)
   
   if (address) {
     await handleAddressSelection(address)
-    console.log('📍 Selected address details:', address)
   }
 }
 
@@ -234,7 +232,6 @@ const handleNext = () => {
 
   // Final update before proceeding
   emitFormUpdate()
-  
   console.log('➡️ Proceeding to next step with data:', {
     selectedAddressId: selectedAddressId.value,
     selectedAddress: selectedAddress.value,
@@ -281,15 +278,6 @@ onMounted(async () => {
           <p class="text-sm text-gray-500">Tentukan alamat tujuan pengiriman untuk order ini</p>
         </div>
       </div>
-    </div>
-
-    <!-- Debug Info (remove in production) -->
-    <div class="mb-4 p-3 bg-gray-100 rounded text-xs">
-      <p><strong>Debug:</strong></p>
-      <p>Selected ID: {{ selectedAddressId }}</p>
-      <p>Destination ID: {{ destinationId }}</p>
-      <p>Form Valid: {{ isFormValid }}</p>
-      <p>Selected Address: {{ selectedAddress?.name || 'None' }}</p>
     </div>
 
     <!-- Loading State -->

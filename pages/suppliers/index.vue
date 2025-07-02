@@ -30,7 +30,7 @@ onMounted(async () => {
           Mitra Bisnis
         </h2>
         <p class="text-muted-foreground">
-          Here's a list of all registered mitra bisnis.
+          Berikut daftar semua mitra bisnis yang terdaftar.
         </p>
       </div>
 

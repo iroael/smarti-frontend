@@ -53,7 +53,7 @@ export function useCustomers() {
         console.error('[useCustomers] Failed to get customer:', error.value)
         throw error.value
       }
-      
+      // console.log('getCustomer', data.value)
       return data.value
     }
     catch (error) {
