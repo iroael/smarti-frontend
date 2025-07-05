@@ -9,9 +9,10 @@ import { computed, onMounted, ref, watch, nextTick } from 'vue'
 import { toast } from 'vue-sonner'
 
 const inventoryTypes = [
-  { value: 'stock', label: 'Barang (Stock)' },
-  { value: 'service', label: 'Jasa (Service)' },
-  { value: 'digital', label: 'Digital' }
+  { value: 'INVENTORY', label: 'Persediaan' },
+  { value: 'SERVICE', label: 'Jasa' },
+  { value: 'NON_INVENTORY', label: 'Non Persediaan' },
+  { value: 'GROUP', label: 'Group' },
 ]
 
 const { createProduct, fetchProductNonBundle, nonBundleProducts } = useProducts()
@@ -23,7 +24,13 @@ const isSubmitting = ref(false)
 const isInitializing = ref(true)
 
 // URL params handling
-const getUrlParams = () => new URLSearchParams(window.location.search).get('type')
+const getUrlParams = () => {
+  if (typeof window !== 'undefined') {
+    return new URLSearchParams(window.location.search).get('type')
+  }
+  return null
+}
+
 const urlType = ref(getUrlParams())
 const isBundleFromUrl = computed(() => urlType.value === 'bundling')
 const isDisabledSwitch = computed(() => urlType.value !== null)
@@ -38,17 +45,18 @@ const {
   handleSubmit,
   resetForm,
   validateField,
+  validate,
 } = useForm({
   validationSchema: schema,
   initialValues: {
     product_code: '',
     name: '',
     description: '',
-    inventory_type: 'stock',
+    inventory_type: 'INVENTORY',
     stock: 0,
-    is_bundle: isBundleFromUrl.value,
-    supplier_id: 0, // Set to 0 initially, will be updated after data loads
-    tax_id: 0, // Set to 0 initially, will be updated after data loads
+    is_bundle: isBundleFromUrl.value || false,
+    supplier_id: null,
+    tax_id: null,
     weight: 0,
     length: 0,
     height: 0,
@@ -78,15 +86,16 @@ const fetchData = async () => {
     await nextTick()
     
     // Set default values after data is loaded
-    if (suppliers.value.length > 0 && values.supplier_id === 0) {
+    if (suppliers.value?.length > 0 && !values.supplier_id) {
       setFieldValue('supplier_id', suppliers.value[0].id)
     }
 
-    if (taxes.value.length > 0 && values.tax_id === 0) {
+    if (taxes.value?.length > 0 && !values.tax_id) {
       setFieldValue('tax_id', taxes.value[0].id)
     }
     
   } catch (error) {
+    console.error('Error fetching data:', error)
     toast.error('Gagal memuat data', {
       description: 'Terjadi kesalahan saat memuat data produk, supplier, atau pajak.'
     })
@@ -109,7 +118,7 @@ onMounted(async () => {
 
 // Watch inventory type changes
 watch(() => values.inventory_type, (newType) => {
-  if (newType !== 'stock') {
+  if (newType !== 'INVENTORY') {
     setFieldValue('stock', 0)
   }
   validateField('stock')
@@ -117,7 +126,7 @@ watch(() => values.inventory_type, (newType) => {
 
 // Tax calculations with null checks
 const selectedTax = computed(() => {
-  if (!taxes.value || taxes.value.length === 0) return null
+  if (!taxes.value || taxes.value.length === 0 || !values.tax_id) return null
   return taxes.value.find(t => t.id === values.tax_id) || null
 })
 
@@ -149,13 +158,13 @@ const bundlePrices = computed(() => {
 watch([() => values.bundleItems, () => values.is_bundle], async () => {
   if (values.is_bundle && !isInitializing.value) {
     try {
-      await nextTick() // Ensure DOM is ready
+      await nextTick()
       const p = bundlePrices.value
       setFieldValue('price.dpp_beli', p.dpp_beli)
       setFieldValue('price.dpp_jual', p.dpp_jual)
       setFieldValue('price.h_jual_b', p.h_jual_b)
     } catch (error) {
-      // Silent error handling - no console output
+      console.error('Error updating bundle prices:', error)
     }
   }
 }, { deep: true })
@@ -164,9 +173,19 @@ watch([() => values.bundleItems, () => values.is_bundle], async () => {
 const isLoading = computed(() => 
   suppliersLoading.value || 
   taxesLoading.value || 
-  isSubmitting.value || 
+  isSubmitting.value ||
   isInitializing.value
 )
+
+// Form can be submitted check
+const canSubmit = computed(() => {
+  return !isSubmitting.value && 
+         !isInitializing.value && 
+         values.name?.trim() && 
+         values.product_code?.trim() && 
+         values.supplier_id && 
+         values.tax_id
+})
 
 // Bundle items management with error handling
 function toggleBundleItem(product_id: number, checked: boolean) {
@@ -186,6 +205,7 @@ function toggleBundleItem(product_id: number, checked: boolean) {
 
     setFieldValue('bundleItems', updatedItems)
   } catch (error) {
+    console.error('Error toggling bundle item:', error)
     toast.error('Gagal mengubah item bundle')
   }
 }
@@ -199,6 +219,7 @@ function updateBundleItemQuantity(product_id: number, quantity: number) {
     )
     setFieldValue('bundleItems', updated)
   } catch (error) {
+    console.error('Error updating bundle item quantity:', error)
     toast.error('Gagal mengubah jumlah item bundle')
   }
 }
@@ -219,17 +240,17 @@ const prepareSubmitData = (formData: any) => {
   const submitData = {
     ...formData,
     // Pastikan numeric fields dalam format yang benar
-    stock: Number(formData.stock),
-    weight: Number(formData.weight),
-    length: Number(formData.length),
-    height: Number(formData.height),
-    width: Number(formData.width),
+    stock: Number(formData.stock) || 0,
+    weight: Number(formData.weight) || 0,
+    length: Number(formData.length) || 0,
+    height: Number(formData.height) || 0,
+    width: Number(formData.width) || 0,
     supplier_id: Number(formData.supplier_id),
     tax_id: Number(formData.tax_id),
     price: {
-      dpp_beli: Number(formData.price.dpp_beli),
-      dpp_jual: Number(formData.price.dpp_jual),
-      h_jual_b: Number(formData.price.h_jual_b),
+      dpp_beli: Number(formData.price.dpp_beli) || 0,
+      dpp_jual: Number(formData.price.dpp_jual) || 0,
+      h_jual_b: Number(formData.price.h_jual_b) || 0,
     },
     // Hanya sertakan bundleItems jika ini adalah bundle product
     ...(formData.is_bundle && {
@@ -261,13 +282,21 @@ const validateFormData = (data: any) => {
     errors.push('Kode produk wajib diisi')
   }
 
+  if (!data.supplier_id) {
+    errors.push('Supplier wajib dipilih')
+  }
+
+  if (!data.tax_id) {
+    errors.push('Pajak wajib dipilih')
+  }
+
   // Bundle validation
   if (data.is_bundle && (!data.bundleItems || data.bundleItems.length === 0)) {
     errors.push('Produk bundle harus memiliki minimal 1 item')
   }
 
   // Stock validation
-  if (data.inventory_type === 'stock' && data.stock < 0) {
+  if (data.inventory_type === 'INVENTORY' && data.stock < 0) {
     errors.push('Stock tidak boleh negatif')
   }
 
@@ -281,55 +310,57 @@ const validateFormData = (data: any) => {
 
 // Form submission with better error handling
 const onSubmit = handleSubmit(async (data) => {
-  if (isInitializing.value) {
-    toast.error('Form masih dalam proses inisialisasi, silakan tunggu sebentar')
-    return
-  }
-
   try {
+    // Set loading state
     isSubmitting.value = true
 
-    // Validasi tambahan
-    const validationErrors = validateFormData(data)
-    if (validationErrors.length > 0) {
-      toast.error('Validasi gagal', {
-        description: validationErrors.join(', '),
+    // Validate form first
+    const { valid } = await validate()
+    if (!valid) {
+      toast.error('Validasi Form Gagal', {
+        description: 'Silakan periksa kembali data yang diisi'
       })
       return
     }
 
-    // Siapkan data untuk submit
+    // Validasi form data
+    const validationErrors = validateFormData(data)
+    if (validationErrors.length > 0) {
+      toast.error('Validasi Gagal', {
+        description: validationErrors.join(', ')
+      })
+      return
+    }
+
+    // Persiapkan data untuk submit
     const submitData = prepareSubmitData(data)
 
-    // Panggil fungsi createProduct
-    const result = await createProduct(submitData)
-    if (result) {
-      toast.success('Produk berhasil disimpan', {
-        description: `Produk "${data.name}" telah ditambahkan ke sistem.`,
+    // Kirim data ke server
+    const response = await createProduct(submitData)
+
+    if (response) {
+      toast.success('Produk berhasil ditambahkan', {
+        description: `Produk "${data.name}" telah berhasil disimpan.`
       })
+
       // Reset form setelah berhasil
-      await nextTick()
-      resetForm()
+      await handleReset()
+      // Redirect atau lakukan tindakan lain jika perlu
+      // e.g., router.push('/products')
+      // return response
     }
     else {
-      throw new Error(result.message || 'Gagal menyimpan produk')
+      throw new Error(response?.message || 'Gagal menyimpan produk')
     }
   }
   catch (error) {
-    let errorMessage = 'Terjadi kesalahan saat menyimpan produk'
-
-    if (error instanceof Error) {
-      errorMessage = error.message
-    }
-    else if (typeof error === 'string') {
-      errorMessage = error
-    }
-
+    console.error('Error submitting form:', error)
     toast.error('Gagal menyimpan produk', {
-      description: errorMessage,
+      description: error.message || 'Terjadi kesalahan saat menyimpan produk'
     })
   }
   finally {
+    // Reset loading state
     isSubmitting.value = false
   }
 })
@@ -339,10 +370,25 @@ const handleReset = async () => {
   try {
     await nextTick()
     resetForm()
+    
+    // Reset ke nilai default berdasarkan URL
+    if (urlType.value === 'bundling') {
+      setFieldValue('is_bundle', true)
+    } else if (urlType.value === 'nonbundling') {
+      setFieldValue('is_bundle', false)
+    }
+    
+    // Set default supplier dan tax lagi setelah reset
+    if (suppliers.value?.length > 0) {
+      setFieldValue('supplier_id', suppliers.value[0].id)
+    }
+    if (taxes.value?.length > 0) {
+      setFieldValue('tax_id', taxes.value[0].id)
+    }
+    
     toast.info('Form telah direset')
-  }
-  catch (error) {
-    // Silent error handling
+  } catch (error) {
+    console.error('Error resetting form:', error)
   }
 }
 
@@ -353,6 +399,7 @@ defineExpose({
   isLoading,
   isSubmitting,
   isInitializing,
+  canSubmit,
 })
 </script>
 
@@ -424,14 +471,14 @@ defineExpose({
               id="stock" 
               type="number" 
               :model-value="values.stock" 
-              :disabled="values.inventory_type !== 'stock'"
+              :disabled="values.inventory_type !== 'INVENTORY'"
               @update:modelValue="val => setFieldValue('stock', Number(val))"
               placeholder="0"
               min="0"
               :class="errors.stock ? 'border-red-500' : ''"
             />
-            <p v-if="values.inventory_type !== 'stock'" class="text-xs text-gray-500">
-              Stok hanya berlaku untuk barang (stock)
+            <p v-if="values.inventory_type !== 'INVENTORY'" class="text-xs text-gray-500">
+              Stok hanya berlaku untuk barang (INVENTORY)
             </p>
             <p v-if="errors.stock" class="text-sm text-red-500">{{ errors.stock }}</p>
           </div>
@@ -439,7 +486,7 @@ defineExpose({
           <div class="space-y-2">
             <Label for="supplier_id">Supplier <span class="text-red-500">*</span></Label>
             <Select 
-              :model-value="values.supplier_id.toString()" 
+              :model-value="values.supplier_id ? values.supplier_id.toString() : ''" 
               @update:modelValue="val => setFieldValue('supplier_id', Number(val))"
             >
               <SelectTrigger :class="errors.supplier_id ? 'border-red-500' : ''">
@@ -461,7 +508,7 @@ defineExpose({
           <div class="space-y-2">
             <Label for="tax_id">Pajak <span class="text-red-500">*</span></Label>
             <Select 
-              :model-value="values.tax_id.toString()" 
+              :model-value="values.tax_id ? values.tax_id.toString() : ''" 
               @update:modelValue="val => setFieldValue('tax_id', Number(val))"
             >
               <SelectTrigger :class="errors.tax_id ? 'border-red-500' : ''">
@@ -497,7 +544,7 @@ defineExpose({
         </div>
 
         <div class="space-y-2">
-          <Label for="description">Deskripsi <span class="text-red-500">*</span></Label>
+          <Label for="description">Deskripsi</Label>
           <Textarea 
             id="description" 
             :model-value="values.description" 
@@ -537,11 +584,11 @@ defineExpose({
               />
             </div>
             <div class="space-y-2">
-              <Label for="width">Width (cm)</Label>
+              <Label for="width">Lebar (cm)</Label>
               <Input
                 id="width"
                 type="number"
-                :model-value="values.length"
+                :model-value="values.width"
                 @update:modelValue="val => setFieldValue('width', Number(val))"
                 placeholder="0"
                 min="0"
@@ -691,16 +738,16 @@ defineExpose({
                   />
                 </TableCell>
                 <TableCell class="font-mono text-sm">{{ item.product_code }}</TableCell>
-                <TableCell>{{ item.name }}</TableCell>
-                <TableCell>Rp {{ Number(item.prices?.[0]?.dpp_beli || 0).toLocaleString('id-ID') }}</TableCell>
-                <TableCell>Rp {{ Number(item.prices?.[0]?.dpp_jual || 0).toLocaleString('id-ID') }}</TableCell>
-                <TableCell>Rp {{ Number(item.prices?.[0]?.h_jual_b || 0).toLocaleString('id-ID') }}</TableCell>
+                <TableCell class="font-medium">{{ item.name }}</TableCell>
+                <TableCell>Rp {{ (item.prices?.[0]?.dpp_beli || 0).toLocaleString('id-ID') }}</TableCell>
+                <TableCell>Rp {{ (item.prices?.[0]?.dpp_jual || 0).toLocaleString('id-ID') }}</TableCell>
+                <TableCell>Rp {{ (item.prices?.[0]?.h_jual_b || 0).toLocaleString('id-ID') }}</TableCell>
                 <TableCell>
-                  <Input 
-                    type="number" 
-                    :value="values.bundleItems?.find(p => p.product_id === item.id)?.quantity || 1"
-                    :disabled="!values.bundleItems?.some(p => p.product_id === item.id)"
-                    @input="updateBundleItemQuantity(item.id, Number(($event.target as HTMLInputElement).value))"
+                  <Input
+                    v-if="values.bundleItems?.some(p => p.product_id === item.id)"
+                    type="number"
+                    :model-value="values.bundleItems?.find(p => p.product_id === item.id)?.quantity || 1"
+                    @update:modelValue="val => updateBundleItemQuantity(item.id, Number(val))"
                     min="1"
                     class="w-16"
                   />
@@ -709,19 +756,44 @@ defineExpose({
             </TableBody>
           </Table>
           
-          <p v-if="errors.bundleItems" class="text-sm text-red-500">{{ errors.bundleItems }}</p>
+          <!-- Bundle Items Error -->
+          <div v-if="values.is_bundle && errors.bundleItems" class="text-sm text-red-500">
+            {{ errors.bundleItems }}
+          </div>
         </div>
 
-        <div class="flex justify-end space-x-2">
-          <Button type="button" variant="outline" @click="handleReset" :disabled="isSubmitting">
-            Reset
-          </Button>
-          <Button type="submit" :disabled="isSubmitting || isInitializing">
-            <span v-if="isSubmitting" class="mr-2">
+        <!-- Form Actions -->
+        <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t">
+          <Button 
+            type="submit" 
+            :disabled="!canSubmit"
+            class="flex-1 sm:flex-none"
+          >
+            <div v-if="isSubmitting" class="flex items-center gap-2">
               <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            </span>
-            {{ isSubmitting ? 'Menyimpan...' : 'Simpan' }}
+              <span>Menyimpan...</span>
+            </div>
+            <span v-else>Simpan Produk</span>
           </Button>
+          
+          <Button 
+            type="button" 
+            variant="outline" 
+            @click="handleReset"
+            :disabled="isSubmitting || isInitializing"
+            class="flex-1 sm:flex-none"
+          >
+            Reset Form
+          </Button>
+        </div>
+
+        <!-- Success Message -->
+        <div v-if="isSubmitting" class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div class="flex items-center gap-2 text-blue-800">
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <span class="font-medium">Menyimpan produk...</span>
+          </div>
+          <p class="text-sm text-blue-700 mt-1">Mohon tunggu, data sedang diproses.</p>
         </div>
       </form>
     </CardContent>

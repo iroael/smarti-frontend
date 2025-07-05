@@ -506,17 +506,20 @@ const handleSubmit = async () => {
     toast.success('Pesanan berhasil dibuat!')
     // Kalau backend return snapToken
     if (createdOrder?.snapToken) {
-      window.snap.pay(createdOrder.snapToken, {
-        onSuccess: function(result) {
-          toast.success('Pembayaran berhasil!')
-        },
-        onPending: function(result) {
-          toast('Pembayaran masih pending.')
-        },
-        onError: function(result) {
-          toast.error('Pembayaran gagal.')
-        },
-      })
+
+      const snapUrl = createdOrder.snapToken
+      window.open(snapUrl, '_blank')
+      // window.snap.pay(createdOrder.snapToken, {
+      //   onSuccess: function(result) {
+      //     toast.success('Pembayaran berhasil!')
+      //   },
+      //   onPending: function(result) {
+      //     toast('Pembayaran masih pending.')
+      //   },
+      //   onError: function(result) {
+      //     toast.error('Pembayaran gagal.')
+      //   },
+      // })
     }
     emit('update', finalOrderData)
     emit('next', 5)

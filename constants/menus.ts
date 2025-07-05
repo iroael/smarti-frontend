@@ -91,7 +91,7 @@ export const navMenu: NavMenu[] = [
         title: 'Buat Pesanan',
         icon: 'i-lucide-package',
         link: '/orders/new-create',
-        roles: ['customer'],
+        roles: ['supplier'],
       },
       {
         title: 'Pesanan Masuk',
@@ -103,6 +103,18 @@ export const navMenu: NavMenu[] = [
         title: 'Pesanan Saya',
         icon: 'i-lucide-package-check',
         link: '/orders/me',
+        roles: ['supplier'],
+      },
+      {
+        title: 'Buat PO',
+        icon: 'i-lucide-file-plus',
+        link: '/purchase/create',
+        roles: ['supplier'],
+      },
+      {
+        title: 'Daftar PO',
+        icon: 'i-lucide-clipboard-list',
+        link: '/purchase',
         roles: ['supplier'],
       },
       {

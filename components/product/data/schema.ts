@@ -72,7 +72,7 @@ export const productSchema = z.object({
   description: z.string().nullable(),
   stock: z.number(),
   is_bundle: z.boolean(),
-  inventory_type: z.enum(['stock', 'service', 'digital']),
+  inventory_type: z.enum(['INVENTORY', 'SERVICE', 'GROUP', 'NON_INVENTORY']),
   supplier: supplierSchema,
   tax: taxSchema.optional(),
   prices: z.array(priceSchema),
@@ -91,7 +91,7 @@ export const productFormSchema = z.object({
   product_code: z.string().min(1, 'Kode produk wajib diisi'),
   name: z.string().min(1, 'Nama produk wajib diisi'),
   description: z.string().nullable(),
-  inventory_type: z.enum(['stock', 'service', 'digital']),
+  inventory_type: z.enum(['INVENTORY', 'SERVICE', 'GROUP', 'NON_INVENTORY']),
   stock: z.number().min(0, 'Stok tidak boleh negatif').optional(),
   is_bundle: z.boolean(),
   supplier_id: z.number().min(1, 'Supplier wajib dipilih'),
@@ -111,9 +111,9 @@ export const productFormSchema = z.object({
     quantity: z.number().min(1, 'Quantity minimal 1'),
   })).optional(),
 }).superRefine((data, ctx) => {
-  if (data.inventory_type !== 'stock' && (data.stock ?? 0) > 0) {
+  if (data.inventory_type !== 'INVENTORY' && (data.stock ?? 0) > 0) {
     ctx.addIssue({
-      path: ['stock'],
+      path: ['INVENTORY'],
       code: z.ZodIssueCode.custom,
       message: 'Stock harus 0 untuk tipe service atau digital',
     })

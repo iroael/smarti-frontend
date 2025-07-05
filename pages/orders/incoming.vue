@@ -52,8 +52,8 @@ const totalValue = computed(() => {
 <template>
   <div class="w-full flex flex-col items-stretch gap-6">
     <div>
-      <h2 class="text-2xl font-bold">Incoming Orders</h2>
-      <p class="text-muted-foreground">Orders received by your store/supplier branch.</p>
+      <h2 class="text-2xl font-bold">Pesanan Masuk</h2>
+      <p class="text-muted-foreground">Daftar Pesanan masuk anda</p>
     </div>
 
     <!-- Status Summary Cards -->

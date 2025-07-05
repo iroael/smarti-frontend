@@ -322,6 +322,19 @@ export function useProducts() {
     return data.value
   }
 
+
+
+  const syncAccurateManual = async (productId: number) => {
+    const { data, error } = await useFetch(`${config.public.apiBase}/products/${productId}/accurate-item-sync`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+      },
+      body: null, // atau hapus body jika tidak dibutuhkan
+    })
+    if (error.value) throw error.value
+    return data.value
+  }
   const updateProduct = async (id: number, payload: any) => {
     const { data, error } = await useFetch(`${config.public.apiBase}/products/${id}`, {
       method: 'PUT',
@@ -433,5 +446,7 @@ export function useProducts() {
     createProduct,
     updateProduct,
     deleteProduct,
+    // sync operations
+    syncAccurateManual,
   }
 }

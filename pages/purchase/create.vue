@@ -7,56 +7,32 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Check, ChevronRight, User, MapPin, Package, CreditCard, CheckCircle } from 'lucide-vue-next'
 
 // Import step components
-import CustomerInfoStep from '~/components/stepper/orders/CustomerInfoStep.vue'
-import AddressStep from '~/components/stepper/orders/AddressStep.vue' 
-import ProductSelectionStep from '~/components/stepper/orders/ProductSelectionStep.vue'
-import OrderSummaryStep from '~/components/stepper/orders/OrderSummaryStep.vue'
-// import ConfirmationStep from '@/components/stepper/ConfirmationStep.vue'
-import DeliveryStep from '~/components/stepper/orders/DeliveryStep.vue'
+import CustomerInfoStep from '~/components/stepper/purchase/CustomerInfoStep.vue'
+import OrderSelectionStep from '~/components/stepper/purchase/OrderSelectionStep.vue'
+import PurchaseSummaryStep from '~/components/stepper/purchase/PurchaseSummaryStep.vue'
 // Stepper configuration
 const steps = [
   {
     id: 1,
-    title: 'Info Customer',
-    description: 'Data customer',
+    title: 'Inforomasi data KSO',
+    description: 'Data KSO',
     icon: User,
     component: CustomerInfoStep,
   },
   {
     id: 2,
-    title: 'Alamat Pengiriman',
-    description: 'Pilih alamat',
-    icon: MapPin,
-    component: AddressStep,
+    title: 'Pilih Order',
+    description: 'Bundle produk',
+    icon: Package,
+    component: OrderSelectionStep,
   },
   {
     id: 3,
-    title: 'Pilih Produk',
-    description: 'Bundle produk',
-    icon: Package,
-    component: ProductSelectionStep,
-  },
-  {
-    id: 4,
-    title: 'Pengiriman',
-    description: 'Pengiriman',
-    icon: Package,
-    component: DeliveryStep,
-  },
-  {
-    id: 5,
-    title: 'Ringkasan Order',
+    title: 'Ringkasan Purchase',
     description: 'Review & bayar',
     icon: CreditCard,
-    component: OrderSummaryStep,
+    component: PurchaseSummaryStep,
   },
-  // {
-  //   id: 6,
-  //   title: 'Selesai',
-  //   description: 'Konfirmasi',
-  //   icon: CheckCircle,
-  //   component: ConfirmationStep,
-  // },
 ]
 
 // Current step state
@@ -163,7 +139,7 @@ definePageMeta({
     <div class="mx-auto px-4">
       <!-- Header -->
       <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Buat Sales Order</h1>
+        <h1 class="text-3xl font-bold text-gray-900">Buat Purchase Order</h1>
         <p class="text-gray-600 mt-2">Ikuti langkah-langkah berikut untuk membuat sales order</p>
       </div>
 
@@ -230,7 +206,7 @@ definePageMeta({
       <Card class="mb-8">
         <CardContent class="p-0">
           <!-- Dynamic Step Component -->
-          <component 
+          <component
             :is="currentStepData?.component"
             :form-data="formData"
             :current-step="currentStep"
