@@ -370,14 +370,14 @@ const handleReset = async () => {
   try {
     await nextTick()
     resetForm()
-    
+
     // Reset ke nilai default berdasarkan URL
     if (urlType.value === 'bundling') {
       setFieldValue('is_bundle', true)
     } else if (urlType.value === 'nonbundling') {
       setFieldValue('is_bundle', false)
     }
-    
+
     // Set default supplier dan tax lagi setelah reset
     if (suppliers.value?.length > 0) {
       setFieldValue('supplier_id', suppliers.value[0].id)
@@ -385,7 +385,7 @@ const handleReset = async () => {
     if (taxes.value?.length > 0) {
       setFieldValue('tax_id', taxes.value[0].id)
     }
-    
+
     toast.info('Form telah direset')
   } catch (error) {
     console.error('Error resetting form:', error)
@@ -526,7 +526,7 @@ defineExpose({
             </Select>
             <p v-if="errors.tax_id" class="text-sm text-red-500">{{ errors.tax_id }}</p>
           </div>
-          
+
           <div class="space-y-2">
             <Label>Produk Bundle?</Label>
             <div class="flex items-center space-x-2">
@@ -597,10 +597,10 @@ defineExpose({
             </div>
             <div class="space-y-2">
               <Label for="height">Tinggi (cm)</Label>
-              <Input 
+              <Input
                 id="height"
-                type="number" 
-                :model-value="values.height" 
+                type="number"
+                :model-value="values.height"
                 @update:modelValue="val => setFieldValue('height', Number(val))"
                 placeholder="0"
                 min="0"
@@ -609,9 +609,9 @@ defineExpose({
             </div>
             <div class="space-y-2">
               <Label for="dimension">Dimensi</Label>
-              <Input 
+              <Input
                 id="dimension"
-                :model-value="values.dimension" 
+                :model-value="values.dimension"
                 @update:modelValue="val => setFieldValue('dimension', val)"
                 placeholder="Contoh: 10x20x30 cm"
               />
@@ -625,10 +625,10 @@ defineExpose({
           <div class="grid md:grid-cols-3 gap-4">
             <div class="space-y-2">
               <Label>DPP Beli</Label>
-              <Input 
-                type="number" 
+              <Input
+                type="number"
                 :model-value="values.is_bundle ? bundlePrices.dpp_beli : values.price.dpp_beli" 
-                :disabled="values.is_bundle" 
+                :disabled="values.is_bundle"
                 @update:modelValue="val => setFieldValue('price.dpp_beli', Number(val))"
                 placeholder="0"
                 min="0"

@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/toast/use-toast'
 import { useSuppliers } from '@/composables/useSupplier'
 import { Check as CheckIcon, Loader2, Plus } from 'lucide-vue-next'
 import { computed, onMounted, reactive, ref } from 'vue'
+import { banks } from '~/types/bank'
 import { useRoute, useRouter } from 'vue-router'
 // Props and Emits
 interface Props {
@@ -376,11 +377,10 @@ onMounted(() => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Vendor">Vendor</SelectItem>
-                    <SelectItem value="Supplier">Supplier</SelectItem>
-                    <SelectItem value="Contractor">Contractor</SelectItem>
-                    <SelectItem value="Consultant">Consultant</SelectItem>
-                    <SelectItem value="Partner">Partner</SelectItem>
-                    <SelectItem value="Distributor">Distributor</SelectItem>
+                    <SelectItem value="Admin">admin</SelectItem>
+                    <SelectItem value="KSO">KSO</SelectItem>
+                    <SelectItem value="ISP">ISP</SelectItem>
+                    <SelectItem value="Provider">Provider</SelectItem>
                   </SelectContent>
                 </Select>
                 <p v-if="errors.kategori" class="text-sm text-destructive">
@@ -501,10 +501,22 @@ onMounted(() => {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <Label>Nama Bank *</Label>
-                  <Input
-                    v-model="account.bankName"
-                    placeholder="Masukkan nama bank"
-                  />
+                  <Select v-model="account.bankName">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih bank" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem
+                          v-for="bank in banks"
+                          :key="bank.kode_bank"
+                          :value="bank.nama_bank"
+                        >
+                          {{ bank.nama_bank }}
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div class="space-y-2">
@@ -587,11 +599,9 @@ onMounted(() => {
                       <SelectValue placeholder="Pilih jenis pajak" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="npwp">NPWP</SelectItem>
-                      <SelectItem value="nib">NIB</SelectItem>
-                      <SelectItem value="pkp">PKP</SelectItem>
-                      <SelectItem value="siup">SIUP</SelectItem>
-                      <SelectItem value="tdp">TDP</SelectItem>
+                      <SelectItem value="npwp">
+                        NPWP
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

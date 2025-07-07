@@ -7,7 +7,7 @@ export const bankAccountSchema = z.object({
   accountName: z.string(),
   branch: z.string(),
   isPrimary: z.boolean(),
-  createdAt: z.string().datetime(), // ISO 8601 date string
+  createdAt: z.string().datetime().optional(), // ISO 8601 date string
 })
 
 // Tax Identification Schema
