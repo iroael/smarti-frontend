@@ -35,7 +35,7 @@ onMounted(async () => {
       </div>
 
       <!-- Tombol tambah supplier hanya untuk admin -->
-      <NuxtLink v-if="isAdmin" to="/supplier/create">
+      <NuxtLink v-if="isAdmin" to="/suppliers/create">
         <button class="bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700 transition">
           + Add Supplier
         </button>

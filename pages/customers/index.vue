@@ -4,28 +4,17 @@ import { columns } from '@/components/customers/components/columns'
 import DataTable from '@/components/customers/components/DataTable.vue'
 import { useCustomers } from '@/composables/useCustomers'
 import { ref } from 'vue'
+import { useAuthStore } from '~/stores/auth'
 
 // Ambil data & methods dari composable
 const { customers, loading: isLoading, error, fetchCustomers, createCustomer } = useCustomers()
+const authStore = useAuthStore()
+const isAdmin = computed(() => authStore.user?.role === 'admin')
 
 // Load data saat mount
 onMounted(() => {
   fetchCustomers()
 })
-
-// State untuk modal tambah customer
-const showAddModal = ref(false)
-
-// Submit handler dari modal
-const handleAddCustomer = async (data: any) => {
-  try {
-    await createCustomer(data)
-    showAddModal.value = false
-    await fetchCustomers()
-  } catch (err) {
-    console.error('Failed to add customer:', err)
-  }
-}
 
 
 // Handler dipanggil saat 1 produk berhasil dihapus
@@ -45,9 +34,13 @@ const handleDeleteSuccess = async () => {
           Berikut daftar semua pengembang rumah subsidi yang terdaftar.
         </p>
       </div>
-      <Button variant="default" @click="showAddModal = true">
-        + Add Customer
-      </Button>
+
+      <!-- Tombol tambah supplier hanya untuk admin -->
+      <NuxtLink v-if="isAdmin" to="/customers/create">
+        <button class="bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700 transition">
+          + Add Mitra Bisnis
+        </button>
+      </NuxtLink>
     </div>
 
     <div v-if="isLoading" class="text-center text-muted-foreground py-10">
@@ -62,12 +55,6 @@ const handleDeleteSuccess = async () => {
       v-else
       :data="customers || []"
       :columns="columns(handleDeleteSuccess)"
-    />
-
-    <AddCustomerModal
-      :open="showAddModal"
-      @close="showAddModal = false"
-      @submit="handleAddCustomer"
     />
   </div>
 </template>

@@ -1,6 +1,8 @@
-import { ref } from 'vue'
+
 import { useFetch } from '#app'
 import { useRuntimeConfig } from '#imports'
+import { formCustomerSchema } from '@/components/customers/data/schema'
+import { ref } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 
 const customers = ref([])
@@ -64,23 +66,23 @@ export function useCustomers() {
 
   const createCustomer = async (payload: any) => {
     try {
+      const parsed = formCustomerSchema.parse(payload) // Zod validation
       const { data, error } = await useFetch(`${config.public.apiBase}/customers`, {
         method: 'POST',
         headers: {
           ...getAuthHeaders(),
           'Content-Type': 'application/json',
         },
-        body: payload,
+        body: parsed,
       })
       if (error.value) {
         console.error('[useCustomers] Failed to create customer:', error.value)
         throw error.value
       }
       return data.value
-    }
-    catch (error) {
-      console.error('[useCustomers] Error in createCustomer:', error)
-      throw error
+    } catch (err) {
+      console.error('[useCustomers] Validation or API error in createCustomer:', err)
+      throw err
     }
   }
 

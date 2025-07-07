@@ -34,7 +34,7 @@ export function useSuppliers() {
         method: 'GET',
         headers: getAuthHeaders(),
       })
-
+      console.log('Response data:', data.value)
       if (error.value) throw error.value
 
       const parsed = suppliersResponseSchema.safeParse(data.value)
@@ -44,7 +44,6 @@ export function useSuppliers() {
       }
 
       suppliers.value = parsed.data.data
-
     } catch (err) {
       console.error('Gagal mengambil data supplier:', err)
       throw err
