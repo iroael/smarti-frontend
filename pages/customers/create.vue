@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { useWilayah } from '@/composables/useWilayah'
 import { formCustomerSchema } from '@/components/customers/data/schema'
+import { formatNPWP, validateNPWP } from '@/composables/formatNPWP'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -11,7 +13,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { useCustomers } from '@/composables/useCustomers'
 import { Check as CheckIcon, Loader2, Plus } from 'lucide-vue-next'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue' // Added watch import
+import { banks } from '~/types/bank'
 import { useRoute, useRouter } from 'vue-router'
 
 interface Props {
@@ -29,6 +32,17 @@ const router = useRouter()
 const { toast } = useToast()
 const { createCustomer } = useCustomers()
 
+// Initialize useWilayah without passing formData
+const {
+  provinces,
+  regencies,
+  districts,
+  villages,
+  selected,
+  loadProvinces,
+} = useWilayah({ useProxy: true })
+
+// Form
 const loading = ref(false)
 const errors = ref<Record<string, string>>({})
 const currentStep = ref(0)
@@ -47,8 +61,10 @@ const formData = reactive({
   address: '',
   phone: '',
   email: '',
-  city: '',
   province: '',
+  regency: '', // Added missing field
+  district: '', // Added missing field
+  village: '', // Added missing field
   postalcode: '',
   bankAccounts: [] as Array<{
     bankName: string
@@ -67,8 +83,64 @@ const formData = reactive({
   }>,
 })
 
+// NPWP Input Handler
+const onNPWPInput = (event: Event, index: number) => {
+  const target = event.target as HTMLInputElement
+  const raw = target.value.replace(/\D/g, '') // angka saja
+  formData.tax[index].taxNumber = formatNPWP(raw)
+  
+  // Clear error saat mengetik
+  if (errors.value[`taxNumber_${index}`]) {
+    delete errors.value[`taxNumber_${index}`]
+  }
+}
+
+// Sync formData with useWilayah selected values
+watch(() => selected.value.province, (newVal) => {
+  formData.province = newVal
+})
+
+watch(() => selected.value.regency, (newVal) => {
+  formData.regency = newVal
+})
+
+watch(() => selected.value.district, (newVal) => {
+  formData.district = newVal
+})
+
+watch(() => selected.value.village, (newVal) => {
+  formData.village = newVal
+})
+
+// Also sync the other way (if formData is updated externally)
+watch(() => formData.province, (newVal) => {
+  if (newVal !== selected.value.province) {
+    selected.value.province = newVal
+  }
+})
+
+watch(() => formData.regency, (newVal) => {
+  if (newVal !== selected.value.regency) {
+    selected.value.regency = newVal
+  }
+})
+
+watch(() => formData.district, (newVal) => {
+  if (newVal !== selected.value.district) {
+    selected.value.district = newVal
+  }
+})
+
+watch(() => formData.village, (newVal) => {
+  if (newVal !== selected.value.village) {
+    selected.value.village = newVal
+  }
+})
+
 const nextStep = () => {
-  if (validateCurrentStep()) currentStep.value++
+  if (validateCurrentStep()) {
+    currentStep.value++
+  }
 }
 
 const previousStep = () => {
@@ -86,25 +158,39 @@ const validateCurrentStep = () => {
   errors.value = {}
 
   switch (currentStep.value) {
-    case 0:
+    case 0: // Basic Information
       if (!formData.name) errors.value.name = 'Nama vendor wajib diisi'
       if (!formData.email) errors.value.email = 'Email wajib diisi'
       if (!formData.phone) errors.value.phone = 'Telepon wajib diisi'
       if (!formData.address) errors.value.address = 'Alamat wajib diisi'
-      if (!formData.city) errors.value.city = 'Kota wajib diisi'
       if (!formData.province) errors.value.province = 'Provinsi wajib diisi'
+      if (!formData.regency) errors.value.regency = 'Kota/Kabupaten wajib diisi'
+      if (!formData.district) errors.value.district = 'Kecamatan wajib diisi'
+      if (!formData.village) errors.value.village = 'Desa/Kelurahan wajib diisi'
       break
-    case 2:
+    case 1: // Bank Accounts - Optional validation
+      // You can add bank account validation here if needed
+      break
+    case 2: // Tax Information
       formData.tax.forEach((tax, index) => {
         if (!tax.taxType) errors.value[`taxType_${index}`] = 'Jenis pajak wajib diisi'
-        if (!tax.taxNumber) errors.value[`taxNumber_${index}`] = 'Nomor pajak wajib diisi'
-        else if (!/^\d+$/.test(tax.taxNumber)) errors.value[`taxNumber_${index}`] = 'Hanya angka'
-        else if (tax.taxNumber.length < 16) errors.value[`taxNumber_${index}`] = 'Minimal 16 digit'
+        if (!tax.taxNumber) {
+          errors.value[`taxNumber_${index}`] = 'Nomor pajak wajib diisi'
+        } else {
+          // Extract only numbers from formatted NPWP
+          const numbersOnly = tax.taxNumber.replace(/\D/g, '')
+          if (numbersOnly.length < 15) {
+            errors.value[`taxNumber_${index}`] = 'NPWP harus 15 digit'
+          }
+        }
         if (!tax.taxName) errors.value[`taxName_${index}`] = 'Nama pajak wajib diisi'
       })
       break
+    case 3: // Review - no validation needed
+      break
   }
 
+  console.log('Validation errors:', errors.value) // Debug log
   return Object.keys(errors.value).length === 0
 }
 
@@ -165,13 +251,20 @@ const onSubmit = async () => {
 
   try {
     loading.value = true
+    // Convert formatted NPWP back to numbers only before saving
+    const normalizedTax = formData.tax.map(tax => ({
+      ...tax,
+      taxNumber: tax.taxNumber.replace(/\D/g, '') // Remove all non-digit characters
+    }))
+
     const payload = {
       ...formData,
+      tax: normalizedTax,
       addresses: normalizeAddresses(),
     }
-    // console.log('Submitting customer data:', payload)
+    console.log('Submitting customer data:', payload)
     const parsed = formCustomerSchema.parse(payload)
-    // console.log('Parsed customer data:', parsed)
+    console.log('Parsed customer data:', parsed)
     await createCustomer(parsed)
 
     toast({
@@ -192,6 +285,7 @@ const onSubmit = async () => {
 
 onMounted(() => {
   initializeFormData()
+  loadProvinces()
 })
 </script>
 
@@ -308,32 +402,87 @@ onMounted(() => {
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="space-y-2">
-                <Label for="city">Kota *</Label>
-                <Input
-                  id="city"
-                  v-model="formData.city"
-                  :class="{ 'border-destructive': errors.city }"
-                  placeholder="Masukkan kota"
-                />
-                <p v-if="errors.city" class="text-sm text-destructive">
-                  {{ errors.city }}
-                </p>
-              </div>
-
+              <!-- Provinsi -->
               <div class="space-y-2">
                 <Label for="province">Provinsi *</Label>
-                <Input
-                  id="province"
-                  v-model="formData.province"
-                  :class="{ 'border-destructive': errors.province }"
-                  placeholder="Masukkan provinsi"
-                />
-                <p v-if="errors.province" class="text-sm text-destructive">
-                  {{ errors.province }}
-                </p>
+                <Select v-model="selected.province">
+                  <SelectTrigger :class="{ 'border-destructive': errors.province }">
+                    <SelectValue placeholder="Pilih provinsi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem
+                      v-for="prov in provinces"
+                      :key="prov.code"
+                      :value="prov.code"
+                    >
+                      {{ prov.name }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p v-if="errors.province" class="text-sm text-destructive">{{ errors.province }}</p>
               </div>
 
+              <!-- Kota/Kabupaten -->
+              <div class="space-y-2">
+                <Label for="regency">Kota/Kabupaten *</Label>
+                <Select v-model="selected.regency" :disabled="!selected.province">
+                  <SelectTrigger :class="{ 'border-destructive': errors.regency }">
+                    <SelectValue placeholder="Pilih kota/kabupaten" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem
+                      v-for="reg in regencies"
+                      :key="reg.code"
+                      :value="reg.code"
+                    >
+                      {{ reg.name }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p v-if="errors.regency" class="text-sm text-destructive">{{ errors.regency }}</p>
+              </div>
+
+              <!-- Kecamatan -->
+              <div class="space-y-2">
+                <Label for="district">Kecamatan *</Label>
+                <Select v-model="selected.district" :disabled="!selected.regency">
+                  <SelectTrigger :class="{ 'border-destructive': errors.district }">
+                    <SelectValue placeholder="Pilih kecamatan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem
+                      v-for="dist in districts"
+                      :key="dist.code"
+                      :value="dist.code"
+                    >
+                      {{ dist.name }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p v-if="errors.district" class="text-sm text-destructive">{{ errors.district }}</p>
+              </div>
+
+              <!-- Kelurahan/Desa -->
+              <div class="space-y-2">
+                <Label for="village">Desa/Kelurahan *</Label>
+                <Select v-model="selected.village" :disabled="!selected.district">
+                  <SelectTrigger :class="{ 'border-destructive': errors.village }">
+                    <SelectValue placeholder="Pilih kelurahan/desa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem
+                      v-for="vill in villages"
+                      :key="vill.code"
+                      :value="vill.code"
+                    >
+                      {{ vill.name }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p v-if="errors.village" class="text-sm text-destructive">{{ errors.village }}</p>
+              </div>
+
+              <!-- Kode Pos -->
               <div class="space-y-2">
                 <Label for="postalcode">Kode Pos</Label>
                 <Input
@@ -378,10 +527,22 @@ onMounted(() => {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <Label>Nama Bank *</Label>
-                  <Input
-                    v-model="account.bankName"
-                    placeholder="Masukkan nama bank"
-                  />
+                  <Select v-model="account.bankName">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih bank" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem
+                          v-for="bank in banks"
+                          :key="bank.kode_bank"
+                          :value="bank.nama_bank"
+                        >
+                          {{ bank.nama_bank }}
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div class="space-y-2">
@@ -443,20 +604,7 @@ onMounted(() => {
           </CardHeader>
           <CardContent class="space-y-4">
             <div v-for="(tax, index) in formData.tax" :key="index" class="border p-4 rounded-lg space-y-4">
-              <div class="flex justify-between items-center">
-                <h4 class="font-medium">Identifikasi Pajak {{ index + 1 }}</h4>
-                <Button
-                  type="button"
-                  v-if="formData.tax.length > 1"
-                  @click="removeTax(index)"
-                  variant="destructive"
-                  size="sm"
-                >
-                  Hapus
-                </Button>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="space-y-2">
                   <Label>Jenis Pajak *</Label>
                   <Select v-model="tax.taxType">
@@ -465,10 +613,6 @@ onMounted(() => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="npwp">NPWP</SelectItem>
-                      <SelectItem value="nib">NIB</SelectItem>
-                      <SelectItem value="pkp">PKP</SelectItem>
-                      <SelectItem value="siup">SIUP</SelectItem>
-                      <SelectItem value="tdp">TDP</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -476,9 +620,18 @@ onMounted(() => {
                 <div class="space-y-2">
                   <Label>Nomor Pajak *</Label>
                   <Input
-                    v-model="tax.taxNumber"
-                    placeholder="Masukkan nomor pajak"
+                    :model-value="tax.taxNumber"
+                    @input="onNPWPInput($event, index)"
+                    placeholder="99.999.999.9-999.999"
+                    maxlength="20"
+                    :class="{ 'border-destructive': errors[`taxNumber_${index}`] }"
                   />
+                  <p v-if="errors[`taxNumber_${index}`]" class="text-sm text-destructive">
+                    {{ errors[`taxNumber_${index}`] }}
+                  </p>
+                  <p class="text-xs text-muted-foreground">
+                    Format: XX.XXX.XXX.X-XXX.XXX (15 digit angka)
+                  </p>
                 </div>
 
                 <div class="space-y-2">
@@ -518,16 +671,6 @@ onMounted(() => {
                 </div>
               </div>
             </div>
-
-            <Button
-              type="button"
-              @click="addTax"
-              variant="outline"
-              class="w-full"
-            >
-              <Plus class="mr-2 h-4 w-4" />
-              Tambah Identifikasi Pajak
-            </Button>
           </CardContent>
         </Card>
       </div>

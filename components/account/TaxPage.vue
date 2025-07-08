@@ -173,15 +173,6 @@ onMounted(() => {
         <h1 class="text-2xl font-bold text-gray-800">Data Pajak</h1>
         <p class="text-gray-600">Kelola informasi identitas pajak perusahaan</p>
       </div>
-      <button
-        @click="openForm()"
-        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-        </svg>
-        Tambah Data Pajak
-      </button>
     </div>
 
     <!-- Loading State -->
@@ -242,44 +233,31 @@ onMounted(() => {
           </div>
           
           <div class="flex items-center gap-2 ml-4">
-  <!-- Jadikan Utama -->
-  <button
-    v-if="!tax.isPrimary"
-    @click="handleSetPrimary(tax.id)"
-    class="text-blue-600 hover:text-blue-800 text-sm px-3 py-1 border border-blue-600 rounded hover:bg-blue-50"
-  >
-    Jadikan Utama
-  </button>
+            <!-- Jadikan Utama -->
+            <button
+              v-if="!tax.isPrimary"
+              @click="handleSetPrimary(tax.id)"
+              class="text-blue-600 hover:text-blue-800 text-sm px-3 py-1 border border-blue-600 rounded hover:bg-blue-50"
+            >
+              Jadikan Utama
+            </button>
 
-  <!-- Aktif/Nonaktif -->
-  <button
-    @click="handleToggleActive(tax)"
-    :class="{
-      'text-green-600 hover:text-green-800 border-green-600 hover:bg-green-50': !tax.isActive,
-      'text-orange-600 hover:text-orange-800 border-orange-600 hover:bg-orange-50': tax.isActive
-    }"
-    class="text-sm px-3 py-1 border rounded"
-  >
-    {{ tax.isActive ? 'Nonaktifkan' : 'Aktifkan' }}
-  </button>
+            <!-- Edit -->
+            <button
+              @click="openForm(tax)"
+              class="text-blue-600 hover:text-blue-800 text-sm px-3 py-1 border border-blue-600 rounded hover:bg-blue-50"
+            >
+              Edit
+            </button>
 
-  <!-- Edit -->
-  <button
-    @click="openForm(tax)"
-    class="text-blue-600 hover:text-blue-800 text-sm px-3 py-1 border border-blue-600 rounded hover:bg-blue-50"
-  >
-    Edit
-  </button>
-
-  <!-- Hapus -->
-  <button
-    @click="handleDelete(tax.id)"
-    class="text-red-600 hover:text-red-800 text-sm px-3 py-1 border border-red-600 rounded hover:bg-red-50"
-  >
-    Hapus
-  </button>
-</div>
-
+            <!-- Hapus -->
+            <button
+              @click="handleDelete(tax.id)"
+              class="text-red-600 hover:text-red-800 text-sm px-3 py-1 border border-red-600 rounded hover:bg-red-50"
+            >
+              Hapus
+            </button>
+          </div>
         </div>
       </div>
       

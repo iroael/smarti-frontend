@@ -72,25 +72,25 @@ export const columns = (
       },
     },
 
-    {
-      id: 'dimension',
-      header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Dimensi (cm)' }),
-      cell: ({ row }) => {
-        const inventory_type = row.original
-        if (inventory_type === 'service') {
-          return h('span', '-')
-        }
-        const length = row.original.length || 0
-        const width = row.original.width || 0
-        const height = row.original.height || 0
+    // {
+    //   id: 'dimension',
+    //   header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Dimensi (cm)' }),
+    //   cell: ({ row }) => {
+    //     const inventory_type = row.original
+    //     if (inventory_type === 'service') {
+    //       return h('span', '-')
+    //     }
+    //     const length = row.original.length || 0
+    //     const width = row.original.width || 0
+    //     const height = row.original.height || 0
 
-        console.log(row.original.id, row.original.product_code, `${length} x ${width} x ${height}`)
+    //     console.log(row.original.id, row.original.product_code, `${length} x ${width} x ${height}`)
 
-        // Jika semuanya 0, kemungkinan belum diisi
-        const isEmpty = !length && !width && !height
-        return h('span', isEmpty ? '-' : `${length} x ${width} x ${height}`)
-      },
-    },
+    //     // Jika semuanya 0, kemungkinan belum diisi
+    //     const isEmpty = !length && !width && !height
+    //     return h('span', isEmpty ? '-' : `${length} x ${width} x ${height}`)
+    //   },
+    // },
 
     {
       id: 'weight',
